@@ -5,4 +5,9 @@ body {
   color: #e2e8f0;
   margin: 0;
   font-family: system-ui, -apple-system, sans-serif;
+  /* PWA Safe Area for iPhones with notches */
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
