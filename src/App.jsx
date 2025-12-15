@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -34,6 +34,15 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// --- DATA: PAINTING STATUS ---
+const PAINT_STATUS = {
+  pile: { label: 'Pile of Shame', icon: Package, color: 'text-slate-500', border: 'border-slate-700' },
+  built: { label: 'Built', icon: Hammer, color: 'text-slate-300', border: 'border-slate-500' },
+  primed: { label: 'Primed', icon: Circle, color: 'text-slate-400', border: 'border-slate-400' },
+  painted: { label: 'Battle Ready', icon: Brush, color: 'text-green-500', border: 'border-green-500' },
+  parade: { label: 'Parade Ready', icon: Trophy, color: 'text-yellow-500', border: 'border-yellow-500' },
+};
 
 // --- DATA: PLAGUES (SPREAD THE SICKNESS) ---
 const SICKNESSES = [
@@ -82,7 +91,7 @@ const UNIT_DATABASE = [
   { id: 'hq_dp_wings', name: 'DG Daemon Prince with Wings', basePoints: 195, role: 'Character', unique: false, synergy: 'monster melee fly fast', sizes: [1] },
   { id: 'hq_malignant', name: 'Malignant Plaguecaster', basePoints: 65, role: 'Character', unique: false, synergy: 'psyker mortal -1_to_wound', sizes: [1], leads: ['tr_pm'] },
   
-  // --- VIRION (SUPPORT CHARACTERS - Can double up) ---
+  // --- VIRION ---
   { id: 'vir_foul', name: 'Foul Blightspawn', basePoints: 50, role: 'Character', unique: false, synergy: 'fights_first anti_charge torrent flamer', sizes: [1], leads: ['tr_pm'], isVirion: true },
   { id: 'vir_bio', name: 'Biologus Putrifier', basePoints: 50, role: 'Character', unique: false, synergy: 'lethal_hits_buff crit_5+ grenade', sizes: [1], leads: ['tr_pm'], isVirion: true },
   { id: 'vir_tally', name: 'Tallyman', basePoints: 45, role: 'Character', unique: false, synergy: 'cp_generation +1_to_hit', sizes: [1], leads: ['tr_pm'], isVirion: true },
@@ -94,7 +103,7 @@ const UNIT_DATABASE = [
   { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap', sizes: [10, 20] },
   { id: 'tr_pox', name: 'Poxwalkers', basePoints: 50, role: 'Battleline', unique: false, synergy: 'screen fnp horde regenerate', sizes: [10, 20] },
 
-  // --- INFANTRY (ELITES) ---
+  // --- INFANTRY ---
   { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike', sizes: [3, 6] },
   { id: 'el_bl', name: 'Blightlord Terminators', basePoints: 165, role: 'Infantry', unique: false, synergy: 'durable deep_strike terminator_armor lethal_hits', sizes: [5, 10] },
   { id: 'el_spawn', name: 'Death Guard Chaos Spawn', basePoints: 70, role: 'Infantry', unique: false, synergy: 'fast regenerate cheap melee', sizes: [2] },
@@ -147,6 +156,9 @@ function AppContent() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [appError, setAppError] = useState(null);
 
+  // --- NEW PHASE 2 STATE ---
+  const [prioritizePainted, setPrioritizePainted] = useState(false);
+
   // --- BATTLE MODE STATE ---
   const [gameTurn, setGameTurn] = useState(1);
   const [selectedSickness, setSelectedSickness] = useState(SICKNESSES[0].id);
@@ -188,7 +200,8 @@ function AppContent() {
           synergy: unit.synergy || '',
           unique: unit.unique,
           modelCount: unit.sizes ? unit.sizes[0] : 1, 
-          points: unit.basePoints
+          points: unit.basePoints,
+          status: 'pile' // Default to Pile of Shame
         };
         setInventory(prev => [newUnit, ...prev]);
         showNotification(`Added ${unit.name}`);
@@ -199,6 +212,13 @@ function AppContent() {
 
   const removeFromInventory = (uuid) => {
     setInventory(prev => prev.filter(u => u.uuid !== uuid));
+  };
+
+  const updateUnitStatus = (uuid, newStatus) => {
+    setInventory(prev => prev.map(u => {
+        if (u.uuid !== uuid) return u;
+        return { ...u, status: newStatus };
+    }));
   };
 
   const updateUnitSize = (uuid, newSize) => {
@@ -280,6 +300,16 @@ function AppContent() {
         let newList = [];
         let currentPoints = 0;
         
+        // --- PHASE 2: PAINTING FILTER ---
+        if (prioritizePainted) {
+            // Sort painted stuff to the top, so greedy algo grabs it first
+            availableInventory.sort((a,b) => {
+                const isPaintedA = ['painted', 'parade'].includes(a.status || 'pile');
+                const isPaintedB = ['painted', 'parade'].includes(b.status || 'pile');
+                return (isPaintedB === true) - (isPaintedA === true);
+            });
+        }
+
         const characters = availableInventory.filter(u => u.role === 'Character' || u.role === 'Epic Hero');
         if (characters.length === 0) {
           showNotification("Error: You need at least 1 Character!", "error");
@@ -318,7 +348,18 @@ function AppContent() {
              return score;
         };
 
-        availableInventory.sort((a, b) => safeGetUtility(b, opponent) - safeGetUtility(a, opponent));
+        // Re-sort remainder by utility (but painting priority might be lost if we re-sort entirely? 
+        // No, let's add painting weight to utility if selected)
+        availableInventory.sort((a, b) => {
+            let scoreA = safeGetUtility(a, opponent);
+            let scoreB = safeGetUtility(b, opponent);
+            
+            if (prioritizePainted) {
+                if (['painted', 'parade'].includes(a.status || 'pile')) scoreA *= 2.0;
+                if (['painted', 'parade'].includes(b.status || 'pile')) scoreB *= 2.0;
+            }
+            return scoreB - scoreA;
+        });
 
         for (const unit of availableInventory) {
           if (unit.unique && newList.some(u => u.unitId === unit.unitId)) continue;
@@ -425,8 +466,11 @@ function AppContent() {
   );
 
   const organizedList = organizeArmy(currentList);
-
   const contagionRange = gameTurn === 1 ? 3 : (gameTurn === 2 ? 6 : 9);
+  
+  // Phase 2: Progress Calc
+  const paintedCount = inventory.filter(u => ['painted', 'parade'].includes(u.status || 'pile')).length;
+  const progressPercent = inventory.length > 0 ? Math.round((paintedCount / inventory.length) * 100) : 0;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-green-500/30" style={{backgroundColor: '#0f172a', color: '#e2e8f0'}}>
@@ -460,15 +504,19 @@ function AppContent() {
         {activeTab === 'inventory' && (
             <div className="space-y-8">
               {/* MY HANGAR */}
-              <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden flex flex-col h-[500px]">
+              <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden flex flex-col h-[600px]">
                  <div className="p-4 bg-slate-900/50 border-b border-slate-700 flex justify-between items-center shrink-0">
                     <div>
                         <h2 className="text-lg font-bold text-white flex items-center gap-2">
                           <Box className="text-green-500" size={20} /> My Hangar
                         </h2>
-                        <p className="text-slate-400 text-xs">
-                            {inventory.length} units • <span className="text-green-400 ml-2 inline-flex items-center gap-1"><Save size={10}/> Auto-Saving</span>
-                        </p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <div className="text-xs text-slate-400">Painting Progress</div>
+                            <div className="w-24 h-2 bg-slate-700 rounded-full overflow-hidden">
+                                <div className="h-full bg-green-500 transition-all" style={{width: `${progressPercent}%`}}></div>
+                            </div>
+                            <div className="text-xs font-bold text-green-400">{progressPercent}%</div>
+                        </div>
                     </div>
                     <div className="flex items-center gap-4">
                       <div className="text-right">
@@ -478,6 +526,7 @@ function AppContent() {
                       <button onClick={resetData} className="text-slate-600 hover:text-red-500 p-2" title="Reset All Data"><RotateCcw size={16} /></button>
                     </div>
                  </div>
+                 
                  <div className="flex-1 overflow-y-auto divide-y divide-slate-700/50 p-2">
                     {inventory.length === 0 ? (
                         <div className="flex flex-col items-center justify-center h-full text-slate-500">
@@ -487,29 +536,48 @@ function AppContent() {
                     ) : (
                         inventory.map(item => {
                             const dbUnit = UNIT_DATABASE.find(d => d.id === item.unitId) || { sizes: [1], basePoints: 0 };
+                            const status = PAINT_STATUS[item.status || 'pile'];
+                            const StatusIcon = status.icon;
+
                             return (
-                                <div key={item.uuid} className="p-3 flex flex-col sm:flex-row sm:items-center justify-between hover:bg-slate-700/20 rounded transition-colors gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-1 h-10 rounded-full ${roleColor(item.role, true)} shrink-0`}></div>
-                                        <div>
-                                            <div className="font-medium text-white">{item.name}</div>
-                                            <div className="text-xs text-slate-400 flex items-center gap-2">
-                                                <span className="font-mono text-green-400">{item.points} pts</span>
-                                                <span>•</span>
-                                                <span>{item.role}</span>
+                                <div key={item.uuid} className={`p-3 flex flex-col gap-3 hover:bg-slate-700/20 rounded transition-colors border-l-4 ${status.border}`}>
+                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                        <div className="flex items-center gap-3">
+                                            <div className={`w-10 h-10 rounded flex items-center justify-center bg-slate-800 ${status.color}`}>
+                                                <StatusIcon size={20} />
+                                            </div>
+                                            <div>
+                                                <div className="font-medium text-white">{item.name}</div>
+                                                <div className="text-xs text-slate-400 flex items-center gap-2">
+                                                    <span className="font-mono text-green-400">{item.points} pts</span>
+                                                    <span>•</span>
+                                                    <span>{item.role}</span>
+                                                </div>
                                             </div>
                                         </div>
-                                    </div>
-                                    <div className="flex items-center gap-3 self-end sm:self-auto">
-                                        {dbUnit.sizes && dbUnit.sizes.length > 1 && (
-                                            <div className="flex items-center gap-2 bg-slate-900 rounded px-2 py-1 border border-slate-700">
-                                                <span className="text-[10px] text-slate-500 uppercase font-bold">Models</span>
-                                                <select value={item.modelCount} onChange={(e) => updateUnitSize(item.uuid, parseInt(e.target.value))} className="bg-transparent text-white text-sm font-mono focus:outline-none cursor-pointer">
-                                                    {dbUnit.sizes.map(size => ( <option key={size} value={size}>{size}</option> ))}
-                                                </select>
-                                            </div>
-                                        )}
-                                        <button onClick={() => removeFromInventory(item.uuid)} className="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700 rounded"><X size={18} /></button>
+                                        
+                                        <div className="flex items-center gap-3 self-end sm:self-auto">
+                                            {/* Painting Status Selector */}
+                                            <select 
+                                                value={item.status || 'pile'}
+                                                onChange={(e) => updateUnitStatus(item.uuid, e.target.value)}
+                                                className="bg-slate-900 text-xs text-slate-300 border border-slate-700 rounded px-2 py-1 focus:outline-none"
+                                            >
+                                                {Object.entries(PAINT_STATUS).map(([key, val]) => (
+                                                    <option key={key} value={key}>{val.label}</option>
+                                                ))}
+                                            </select>
+
+                                            {dbUnit.sizes && dbUnit.sizes.length > 1 && (
+                                                <div className="flex items-center gap-2 bg-slate-900 rounded px-2 py-1 border border-slate-700">
+                                                    <span className="text-[10px] text-slate-500 uppercase font-bold">Size</span>
+                                                    <select value={item.modelCount} onChange={(e) => updateUnitSize(item.uuid, parseInt(e.target.value))} className="bg-transparent text-white text-sm font-mono focus:outline-none cursor-pointer">
+                                                        {dbUnit.sizes.map(size => ( <option key={size} value={size}>{size}</option> ))}
+                                                    </select>
+                                                </div>
+                                            )}
+                                            <button onClick={() => removeFromInventory(item.uuid)} className="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700 rounded"><X size={18} /></button>
+                                        </div>
                                     </div>
                                 </div>
                             );
@@ -602,6 +670,15 @@ function AppContent() {
                             </div>
                          </div>
                     </div>
+
+                    {/* PAINTED FILTER TOGGLE */}
+                    <button 
+                        onClick={() => setPrioritizePainted(!prioritizePainted)}
+                        className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-bold border transition-all ${prioritizePainted ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}
+                    >
+                        <Brush size={16} /> 
+                        {prioritizePainted ? "Prioritizing Painted Models" : "Use All Models"}
+                    </button>
 
                     <button onClick={generateSmartList} className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-900/20 font-bold">
                         <Zap size={20} /> <span>Auto-Generate List</span>
