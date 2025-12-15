@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent, Edit3, FolderOpen, Disc, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -35,16 +35,6 @@ class ErrorBoundary extends React.Component {
   }
 }
 
-// --- DATA: STRATAGEMS ---
-const STRATAGEMS = [
-  { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits. Critical for punching through armor.' },
-  { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1]. If in range of infected objective, gain [Sustained Hits 2] instead.' },
-  { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit). Essential defensive tool.' },
-  { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover]. Spotter unit must see target.' },
-  { name: 'Disgustingly Resilient', cp: 2, phase: 'Fight/Shooting', desc: 'Reduce Damage characteristic of attacks by 1 (to min 1). Expensive but saves terminators.' },
-  { name: 'Gifts of Decay', cp: 1, phase: 'Command', desc: 'Heal D3 wounds on a Character or Vehicle. Nurgle loves life.' },
-];
-
 // --- DATA: PAINTING STATUS ---
 const PAINT_STATUS = {
   pile: { label: 'Pile of Shame', icon: Package, color: 'text-slate-500', border: 'border-slate-700' },
@@ -62,16 +52,112 @@ const SICKNESSES = [
   { id: 'poxes_bonus', name: 'Lord of Poxes (Unit Only)', effect: 'Worsen Save & -1 to Hit (Specific Unit Only).' }
 ];
 
-// --- DATA: DETACHMENTS ---
+// --- DATA: DETACHMENTS & STRATAGEMS ---
 const DETACHMENTS = [
-  { id: 'plague_company', name: 'Plague Company (Index)', desc: 'The standard vector. Spreads Contagion to objectives. Good for sticky objective play.', criteria: (units) => true, score: 0 },
-  { id: 'inexorable', name: 'The Inexorable', desc: 'Armor penetration mitigation and vehicle movement. Best for Rhino/Land Raider heavy lists.', criteria: (units) => units.filter(u => u.role === 'Dedicated Transport' || u.name.includes('Land Raider') || u.name.includes('Predator')).length >= 2, score: 0 },
-  { id: 'mortarions_anvil', name: 'Mortarion\'s Anvil', desc: 'Defensive melee. Heroic intervention and bodyguard bonuses. Best for Terminator bricks/Characters.', criteria: (units) => units.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord') || u.role === 'Character').length >= 3, score: 0 },
-  { id: 'ferrymen', name: 'The Ferrymen', desc: 'Drone and Poxwalker support. Enhances aura ranges and morale debuffs.', criteria: (units) => units.filter(u => u.name.includes('Bloat-drone') || u.name.includes('Poxwalker') || u.name.includes('Blightlord')).length >= 3, score: 0 },
-  { id: 'wretched', name: 'The Wretched', desc: 'Psyker heavy. Mortal wound output maximized. Requires Psykers.', criteria: (units) => units.filter(u => (u.synergy || '').includes('psyker') || u.name.includes('Malignant')).length >= 2, score: 0 },
-  { id: 'poxmongers', name: 'Poxmongers', desc: 'Daemon Engine focus. Improves invulnerable saves for Engines. Great for Haulers and Crawlers.', criteria: (units) => units.filter(u => (u.synergy || '').includes('daemon_engine') || u.role === 'Vehicle' || u.name.includes('War Dog')).length >= 3, score: 0 },
-  { id: 'chosen_sons', name: 'The Chosen Sons', desc: 'Flamer and Plague Belcher specialists. Increases strength of torrent weapons.', criteria: (units) => units.filter(u => (u.synergy || '').includes('torrent') || (u.synergy || '').includes('flamer') || u.name.includes('Deathshroud')).length >= 3, score: 0 },
-  { id: 'terminus_est', name: 'Terminus Est Assault', desc: 'Infantry & Poxwalker horde. Grants Deep Strike to Bubotic Astartes. No Vehicles allowed.', criteria: (units) => units.filter(u => u.role === 'Battleline' || u.name.includes('Poxwalker') || u.name.includes('Terminator')).length >= 4 && units.filter(u => u.role === 'Vehicle' && !u.name.includes('War Dog')).length === 0, score: 0 },
+  { 
+    id: 'plague_company', 
+    name: 'Plague Company (Index)', 
+    desc: 'The standard vector. Spreads Contagion to objectives. Good for sticky objective play.', 
+    criteria: (units) => true, 
+    score: 0,
+    stratagems: [
+      { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits. Critical for punching through armor.' },
+      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1]. If in range of infected objective, gain [Sustained Hits 2].' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit). Essential defensive tool.' },
+      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover]. Spotter unit must see target.' },
+    ]
+  },
+  { 
+    id: 'inexorable', 
+    name: 'The Inexorable', 
+    desc: 'Armor penetration mitigation and vehicle movement. Best for Rhino/Land Raider heavy lists.', 
+    criteria: (units) => units.filter(u => u.role === 'Dedicated Transport' || u.name.includes('Land Raider') || u.name.includes('Predator')).length >= 2, 
+    score: 0,
+    stratagems: [
+      { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits.' },
+      { name: 'Leech-Spore Casket', cp: 1, phase: 'Shooting', desc: 'When a vehicle destroys a model, heal D3 wounds on a nearby unit.' },
+      { name: 'Unholy Advance', cp: 1, phase: 'Movement', desc: 'Vehicles can shoot as if they remained stationary after Falling Back.' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
+    ]
+  },
+  { 
+    id: 'mortarions_anvil', 
+    name: 'Mortarion\'s Anvil', 
+    desc: 'Defensive melee. Heroic intervention and bodyguard bonuses. Best for Terminator bricks/Characters.', 
+    criteria: (units) => units.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord') || u.role === 'Character').length >= 3, 
+    score: 0,
+    stratagems: [
+      { name: 'Gloaming Bloat', cp: 1, phase: 'Fight', desc: 'Shut down enemy re-rolls to hit and wound against this unit.' },
+      { name: 'Relentless', cp: 2, phase: 'Fight', desc: 'Character fights on death.' },
+      { name: 'Face of the Mantle', cp: 1, phase: 'Charge', desc: 'Heroic Intervention costs 0CP and unit hits on 2+.' },
+      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
+    ]
+  },
+  { 
+    id: 'ferrymen', 
+    name: 'The Ferrymen', 
+    desc: 'Drone and Poxwalker support. Enhances aura ranges and morale debuffs.', 
+    criteria: (units) => units.filter(u => u.name.includes('Bloat-drone') || u.name.includes('Poxwalker') || u.name.includes('Blightlord')).length >= 3, 
+    score: 0,
+    stratagems: [
+      { name: 'The Droning', cp: 1, phase: 'Movement', desc: 'Halve Move characteristic of enemy units within Contagion Range.' },
+      { name: 'On Droning Wings', cp: 1, phase: 'Command', desc: 'Add 6" to aura abilities of one Character.' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
+      { name: 'Vermid Whispers', cp: 1, phase: 'Shooting', desc: '+1 to Hit for Poxwalkers or Blightlords.' },
+    ]
+  },
+  { 
+    id: 'wretched', 
+    name: 'The Wretched', 
+    desc: 'Psyker heavy. Mortal wound output maximized. Requires Psykers.', 
+    criteria: (units) => units.filter(u => (u.synergy || '').includes('psyker') || u.name.includes('Malignant')).length >= 2, 
+    score: 0,
+    stratagems: [
+      { name: 'Eater of Magic', cp: 1, phase: 'Psychic', desc: 'Psychic attacks gain [Devastating Wounds].' },
+      { name: 'Sevenfold Blessings', cp: 1, phase: 'Command', desc: 'Psyker can re-roll psychic test. If 7+ rolled, refund CP.' },
+      { name: 'Putrid Explosion', cp: 1, phase: 'Fight', desc: 'If Psyker dies, they explode dealing D3 mortals to everyone within 6".' },
+      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover].' },
+    ]
+  },
+  { 
+    id: 'poxmongers', 
+    name: 'Poxmongers', 
+    desc: 'Daemon Engine focus. Improves invulnerable saves for Engines. Great for Haulers and Crawlers.', 
+    criteria: (units) => units.filter(u => (u.synergy || '').includes('daemon_engine') || u.role === 'Vehicle' || u.name.includes('War Dog')).length >= 3, 
+    score: 0,
+    stratagems: [
+      { name: 'Ironclot Furnace', cp: 1, phase: 'Command', desc: 'Daemon Engines gain 4+ Invulnerable Save.' },
+      { name: 'Bilious Blood-rush', cp: 1, phase: 'Shooting', desc: 'Daemon Engines can shoot after Falling Back.' },
+      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover].' },
+      { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits.' },
+    ]
+  },
+  { 
+    id: 'chosen_sons', 
+    name: 'The Chosen Sons', 
+    desc: 'Flamer and Plague Belcher specialists. Increases strength of torrent weapons.', 
+    criteria: (units) => units.filter(u => (u.synergy || '').includes('torrent') || (u.synergy || '').includes('flamer') || u.name.includes('Deathshroud')).length >= 3, 
+    score: 0,
+    stratagems: [
+      { name: 'Plague Brewer', cp: 1, phase: 'Shooting', desc: 'Add 1 to Damage of Torrent weapons (Flamers/Belchers).' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
+      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
+      { name: 'Comfort in Coruption', cp: 2, phase: 'Charge', desc: '-2 to Charge rolls made against this unit.' },
+    ]
+  },
+  { 
+    id: 'terminus_est', 
+    name: 'Terminus Est Assault', 
+    desc: 'Infantry & Poxwalker horde. Grants Deep Strike to Bubotic Astartes. No Vehicles allowed.', 
+    criteria: (units) => units.filter(u => u.role === 'Battleline' || u.name.includes('Poxwalker') || u.name.includes('Terminator')).length >= 4 && units.filter(u => u.role === 'Vehicle' && !u.name.includes('War Dog')).length === 0, 
+    score: 0,
+    stratagems: [
+      { name: 'Rotting Tide', cp: 1, phase: 'Command', desc: 'Return D3+3 destroyed Poxwalkers to a unit.' },
+      { name: 'Outbreak Assault', cp: 1, phase: 'Movement', desc: 'Unit arriving from Deep Strike adds 1 to Charge rolls.' },
+      { name: 'Mutant Strain', cp: 1, phase: 'Fight', desc: 'Poxwalkers deal mortals on 6s to hit, but take mortals on 1s.' },
+      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
+    ]
+  },
 ];
 
 const OPPONENTS = [
@@ -109,13 +195,40 @@ const UNIT_DATABASE = [
   { id: 'vir_icon', name: 'Noxious Blightbringer', basePoints: 50, role: 'Character', unique: false, synergy: 'move_buff battleshock', sizes: [1], leads: ['tr_pm'], isVirion: true },
 
   // --- BATTLELINE ---
-  { id: 'tr_pm', name: 'Plague Marines', basePoints: 90, role: 'Battleline', unique: false, synergy: 'sticky_obj special_weapons lethal_hits', sizes: [5, 10] },
+  { 
+      id: 'tr_pm', 
+      name: 'Plague Marines', 
+      basePoints: 90, 
+      role: 'Battleline', 
+      unique: false, 
+      synergy: 'sticky_obj special_weapons lethal_hits', 
+      sizes: [5, 10],
+      wargearProfiles: [
+          { name: 'Heavy Melee', desc: 'Heavy Plague Weapons / Bubotic', tags: 'melee' },
+          { name: 'Special Guns', desc: 'Plasma / Melta / Blight Launchers', tags: 'anti_elite anti_tank mid_range' },
+          { name: 'Torrent/Spewers', desc: 'Plague Spewers / Belchers', tags: 'torrent overwatch' },
+          { name: 'Standard Bolters', desc: 'Boltgun / Plague Knives', tags: 'mid_range' }
+      ]
+  },
   { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap', sizes: [10, 20] },
   { id: 'tr_pox', name: 'Poxwalkers', basePoints: 50, role: 'Battleline', unique: false, synergy: 'screen fnp horde regenerate', sizes: [10, 20] },
 
   // --- INFANTRY ---
   { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike', sizes: [3, 6] },
-  { id: 'el_bl', name: 'Blightlord Terminators', basePoints: 165, role: 'Infantry', unique: false, synergy: 'durable deep_strike terminator_armor lethal_hits', sizes: [5, 10] },
+  { 
+      id: 'el_bl', 
+      name: 'Blightlord Terminators', 
+      basePoints: 165, 
+      role: 'Infantry', 
+      unique: false, 
+      synergy: 'durable deep_strike terminator_armor lethal_hits', 
+      sizes: [5, 10],
+      wargearProfiles: [
+          { name: 'Combi-Bolters', desc: 'Standard', tags: 'mid_range' },
+          { name: 'Anti-Infantry', desc: 'Combi-Weapons / Reaper', tags: 'anti_infantry' },
+          { name: 'Anti-Tank', desc: 'Melta / Missile', tags: 'anti_tank melta' }
+      ]
+  },
   { id: 'el_spawn', name: 'Death Guard Chaos Spawn', basePoints: 70, role: 'Infantry', unique: false, synergy: 'fast regenerate cheap melee', sizes: [2] },
 
   // --- VEHICLES ---
@@ -123,9 +236,35 @@ const UNIT_DATABASE = [
   { id: 'fa_drone_spitter', name: 'Foetid Bloat-drone (Plaguespitters)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly torrent flamer overwatch', sizes: [1] },
   { id: 'fa_drone_launcher', name: 'Foetid Bloat-drone (Heavy Blight Launcher)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly shoot', sizes: [1] },
   { id: 'fa_mbh', name: 'Myphitic Blight-hauler', basePoints: 100, role: 'Vehicle', unique: false, synergy: 'daemon_engine anti_tank melta fast', sizes: [1, 2, 3] },
-  { id: 'hs_pbc', name: 'Plagueburst Crawler', basePoints: 180, role: 'Vehicle', unique: false, synergy: 'daemon_engine indirect mortar anti_infantry durable entropy', sizes: [1] },
+  { 
+      id: 'hs_pbc', 
+      name: 'Plagueburst Crawler', 
+      basePoints: 180, 
+      role: 'Vehicle', 
+      unique: false, 
+      synergy: 'daemon_engine indirect mortar anti_infantry durable entropy', 
+      sizes: [1],
+      wargearProfiles: [
+          { name: 'Entropy Cannons', desc: 'Anti-Tank', tags: 'anti_tank lascannon' },
+          { name: 'Plaguespitters', desc: 'Overwatch/Anti-Infantry', tags: 'torrent overwatch' },
+          { name: 'Rothail', desc: 'Rapid Fire', tags: 'mid_range' }
+      ]
+  },
   { id: 'hs_defiler', name: 'Death Guard Defiler', basePoints: 190, role: 'Vehicle', unique: false, synergy: 'daemon_engine hybrid walker scourge', sizes: [1] },
-  { id: 'el_helbrute', name: 'Death Guard Helbrute', basePoints: 140, role: 'Vehicle', unique: false, synergy: 'contagion_buff walker', sizes: [1] },
+  { 
+      id: 'el_helbrute', 
+      name: 'Death Guard Helbrute', 
+      basePoints: 140, 
+      role: 'Vehicle', 
+      unique: false, 
+      synergy: 'contagion_buff walker', 
+      sizes: [1],
+      wargearProfiles: [
+          { name: 'Range Focus', desc: 'Missile/Lascannon', tags: 'anti_tank long_range' },
+          { name: 'Hybrid', desc: 'Melee/Melta', tags: 'melee melta' },
+          { name: 'Melee Focus', desc: 'Double Fists', tags: 'melee' }
+      ]
+  },
   { id: 'hs_pred_ann', name: 'DG Predator Annihilator', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_tank lascannon', sizes: [1] },
   { id: 'hs_pred_des', name: 'DG Predator Destructor', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_elite autocannon', sizes: [1] },
   { id: 'hs_lr', name: 'Death Guard Land Raider', basePoints: 240, role: 'Vehicle', unique: false, synergy: 'transport assault_ramp lascannon durable', sizes: [1] },
@@ -166,8 +305,15 @@ function AppContent() {
   const [showExportModal, setShowExportModal] = useState(false);
   const [appError, setAppError] = useState(null);
 
-  // --- NEW PHASE 2 STATE ---
+  // --- FEATURE STATES ---
   const [prioritizePainted, setPrioritizePainted] = useState(false);
+  const [editingPointsId, setEditingPointsId] = useState(null); 
+  const [tempPoints, setTempPoints] = useState(0); 
+  const [listName, setListName] = useState("My Death Guard Army");
+  const [savedLists, setSavedLists] = useState([]);
+  
+  // New State for Wargear Configurator
+  const [expandedWargearId, setExpandedWargearId] = useState(null); // ID of unit currently configuring
 
   // --- BATTLE MODE STATE ---
   const [gameTurn, setGameTurn] = useState(1);
@@ -177,33 +323,36 @@ function AppContent() {
     alpha: false, beta: false, gamma: false, delta: false, epsilon: false, zeta: false
   });
   
-  // --- PHASE 3: MATH STATE ---
   const [mathStr, setMathStr] = useState(4);
   const [mathTough, setMathTough] = useState(4);
 
+  // --- LOAD DATA ---
   useEffect(() => {
     try {
-      const savedInventory = localStorage.getItem('mm_dg_inventory_v3');
-      if (savedInventory) {
-        const parsed = JSON.parse(savedInventory);
-        if (Array.isArray(parsed)) setInventory(parsed);
-      }
+      const savedInv = localStorage.getItem('mm_dg_inventory_v3');
+      if (savedInv) setInventory(JSON.parse(savedInv));
+      
+      const savedPlans = localStorage.getItem('mm_dg_plans');
+      if (savedPlans) setSavedLists(JSON.parse(savedPlans));
     } catch (e) {
       console.warn("Storage Load Warning:", e);
     }
     setIsLoaded(true);
   }, []);
 
+  // --- SAVE DATA ---
   useEffect(() => {
     if (isLoaded) {
       try {
         localStorage.setItem('mm_dg_inventory_v3', JSON.stringify(inventory));
+        localStorage.setItem('mm_dg_plans', JSON.stringify(savedLists));
       } catch (e) {
         console.warn("Storage Save Warning:", e);
       }
     }
-  }, [inventory, isLoaded]);
+  }, [inventory, savedLists, isLoaded]);
 
+  // --- INVENTORY ACTIONS ---
   const addToInventory = (unit) => {
     try {
         const newUnit = {
@@ -215,7 +364,8 @@ function AppContent() {
           unique: unit.unique,
           modelCount: unit.sizes ? unit.sizes[0] : 1, 
           points: unit.basePoints,
-          status: 'pile' // Default to Pile of Shame
+          status: 'pile',
+          activeWargear: [] // Array of wargear profile names
         };
         setInventory(prev => [newUnit, ...prev]);
         showNotification(`Added ${unit.name}`);
@@ -233,6 +383,36 @@ function AppContent() {
         if (u.uuid !== uuid) return u;
         return { ...u, status: newStatus };
     }));
+  };
+
+  // --- WARGEAR TOGGLE LOGIC ---
+  const toggleWargear = (uuid, profileName) => {
+      setInventory(prev => prev.map(u => {
+          if (u.uuid !== uuid) return u;
+          const current = u.activeWargear || [];
+          const exists = current.includes(profileName);
+          
+          let newWargear;
+          if (exists) {
+              newWargear = current.filter(p => p !== profileName);
+          } else {
+              newWargear = [...current, profileName];
+          }
+          return { ...u, activeWargear: newWargear };
+      }));
+  };
+
+  const startEditingPoints = (unit) => {
+      setEditingPointsId(unit.uuid);
+      setTempPoints(unit.points);
+  };
+
+  const savePoints = (uuid) => {
+      setInventory(prev => prev.map(u => {
+          if (u.uuid !== uuid) return u;
+          return { ...u, points: tempPoints };
+      }));
+      setEditingPointsId(null);
   };
 
   const updateUnitSize = (uuid, newSize) => {
@@ -258,6 +438,7 @@ function AppContent() {
   const clearList = () => {
     setCurrentList([]);
     setSuggestedDetachment(null);
+    setListName("New Army List");
   };
 
   const resetData = () => {
@@ -268,7 +449,36 @@ function AppContent() {
     }
   };
 
-  // --- SQUAD ORGANIZATION LOGIC ---
+  const saveCurrentList = () => {
+      if (currentList.length === 0) {
+          showNotification("Cannot save empty list", "error");
+          return;
+      }
+      const newPlan = {
+          id: Date.now(),
+          name: listName,
+          units: currentList,
+          detachment: suggestedDetachment,
+          targetPoints: targetPoints,
+          opponent: opponent
+      };
+      setSavedLists(prev => [...prev, newPlan]);
+      showNotification("Battle Plan Saved!");
+  };
+
+  const loadList = (plan) => {
+      setCurrentList(plan.units);
+      setSuggestedDetachment(plan.detachment);
+      setTargetPoints(plan.targetPoints || 2000);
+      setOpponent(plan.opponent || 'none');
+      setListName(plan.name);
+      showNotification(`Loaded "${plan.name}"`);
+  };
+
+  const deleteList = (id) => {
+      setSavedLists(prev => prev.filter(p => p.id !== id));
+  };
+
   const organizeArmy = (rawList) => {
     let unassignedUnits = JSON.parse(JSON.stringify(rawList));
     let squads = [];
@@ -314,9 +524,7 @@ function AppContent() {
         let newList = [];
         let currentPoints = 0;
         
-        // --- PHASE 2: PAINTING FILTER ---
         if (prioritizePainted) {
-            // Sort painted stuff to the top, so greedy algo grabs it first
             availableInventory.sort((a,b) => {
                 const isPaintedA = ['painted', 'parade'].includes(a.status || 'pile');
                 const isPaintedB = ['painted', 'parade'].includes(b.status || 'pile');
@@ -355,15 +563,25 @@ function AppContent() {
         const safeGetUtility = (u, opp) => {
              let score = u.points || 0;
              const oppData = OPPONENTS.find(o => o.id === opp);
-             const syn = u.synergy || '';
+             const dbUnit = UNIT_DATABASE.find(db => db.id === u.unitId);
+             
+             // --- NEW LOGIC: MERGE SYNERGIES ---
+             let fullSynergy = u.synergy || '';
+             
+             // Append active wargear synergies
+             if (dbUnit && dbUnit.wargearProfiles && u.activeWargear) {
+                 u.activeWargear.forEach(profileName => {
+                     const profile = dbUnit.wargearProfiles.find(p => p.name === profileName);
+                     if (profile) fullSynergy += ' ' + profile.tags;
+                 });
+             }
+
              if (oppData && oppData.priority.length > 0) {
-                 if (oppData.priority.some(tag => syn.includes(tag))) score *= 1.5;
+                 if (oppData.priority.some(tag => fullSynergy.includes(tag))) score *= 1.5;
              }
              return score;
         };
 
-        // Re-sort remainder by utility (but painting priority might be lost if we re-sort entirely? 
-        // No, let's add painting weight to utility if selected)
         availableInventory.sort((a, b) => {
             let scoreA = safeGetUtility(a, opponent);
             let scoreB = safeGetUtility(b, opponent);
@@ -400,6 +618,9 @@ function AppContent() {
 
         let bestDetachment = DETACHMENTS[0]; 
         let maxScore = -1;
+        // Logic remains same for detachment picking (simplified for robustness)
+        // Note: For advanced detachment picking with wargear, we'd need to pass fullSynergy down, 
+        // but current logic mainly checks unit names/roles which is safer.
         const safeCheckList = newList.map(u => ({...u, synergy: u.synergy || '', name: u.name || '', role: u.role || ''}));
 
         DETACHMENTS.forEach(det => {
@@ -437,15 +658,7 @@ function AppContent() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  // --- CALCULATE WOUND ROLL (NURGLES MATH) ---
   const getWoundRoll = () => {
-      // Logic: S vs T. 
-      // If S >= 2*T -> 2+
-      // If S > T -> 3+
-      // If S = T -> 4+
-      // If S < T -> 5+
-      // If S <= T/2 -> 6+
-      // Nurgle Gift: Subtract 1 from T if range is met.
       const modifiedT = Math.max(1, mathTough - 1); 
       let needed = 0;
       if (mathStr >= modifiedT * 2) needed = 2;
@@ -456,43 +669,6 @@ function AppContent() {
       return needed;
   };
 
-  const generateExportText = () => {
-      const totalPoints = currentList.reduce((a, b) => a + b.points, 0);
-      const detName = suggestedDetachment ? suggestedDetachment.name : "Plague Company";
-      let text = `+++ MUSTER & MANIFEST ARMY LIST +++\n`;
-      text += `POINTS: ${totalPoints} / ${targetPoints}\n`;
-      text += `DETACHMENT: ${detName}\n\n`;
-      
-      const organized = organizeArmy(currentList);
-      organized.forEach(item => {
-          if (item.type === 'squad') {
-              text += `[${item.body.points}pts] ${item.body.name} (${item.body.modelCount})\n`;
-              item.leaders.forEach(l => {
-                  text += `  + Leader: ${l.name} [${l.points}pts]\n`;
-              });
-          } else {
-              text += `[${item.unit.points}pts] ${item.unit.name} (${item.unit.modelCount})\n`;
-          }
-      });
-      return text;
-  };
-
-  const copyToClipboard = () => {
-      const text = generateExportText();
-      navigator.clipboard.writeText(text).then(() => showNotification("Copied!")).catch(() => showNotification("Failed to copy", "error"));
-  };
-
-  const downloadTextFile = () => {
-      const text = generateExportText();
-      const element = document.createElement("a");
-      const file = new Blob([text], {type: 'text/plain'});
-      element.href = URL.createObjectURL(file);
-      element.download = "death_guard_list.txt";
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-  };
-
   const filteredDatabase = UNIT_DATABASE.filter(unit => 
     unit.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     unit.role.toLowerCase().includes(searchTerm.toLowerCase())
@@ -501,9 +677,11 @@ function AppContent() {
   const organizedList = organizeArmy(currentList);
   const contagionRange = gameTurn === 1 ? 3 : (gameTurn === 2 ? 6 : 9);
   
-  // Phase 2: Progress Calc
   const paintedCount = inventory.filter(u => ['painted', 'parade'].includes(u.status || 'pile')).length;
   const progressPercent = inventory.length > 0 ? Math.round((paintedCount / inventory.length) * 100) : 0;
+
+  const activeStratagems = suggestedDetachment ? suggestedDetachment.stratagems : DETACHMENTS[0].stratagems;
+  const activeDetachmentName = suggestedDetachment ? suggestedDetachment.name : DETACHMENTS[0].name;
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-green-500/30" style={{backgroundColor: '#0f172a', color: '#e2e8f0'}}>
@@ -571,6 +749,8 @@ function AppContent() {
                             const dbUnit = UNIT_DATABASE.find(d => d.id === item.unitId) || { sizes: [1], basePoints: 0 };
                             const status = PAINT_STATUS[item.status || 'pile'];
                             const StatusIcon = status.icon;
+                            const isEditing = editingPointsId === item.uuid;
+                            const isWargearOpen = expandedWargearId === item.uuid;
 
                             return (
                                 <div key={item.uuid} className={`p-3 flex flex-col gap-3 hover:bg-slate-700/20 rounded transition-colors border-l-4 ${status.border}`}>
@@ -582,7 +762,22 @@ function AppContent() {
                                             <div>
                                                 <div className="font-medium text-white">{item.name}</div>
                                                 <div className="text-xs text-slate-400 flex items-center gap-2">
-                                                    <span className="font-mono text-green-400">{item.points} pts</span>
+                                                    {isEditing ? (
+                                                        <div className="flex items-center gap-1">
+                                                            <input 
+                                                                type="number" 
+                                                                value={tempPoints} 
+                                                                onChange={(e) => setTempPoints(parseInt(e.target.value) || 0)}
+                                                                className="w-16 bg-slate-900 border border-slate-600 rounded px-1 py-0.5 text-green-400 font-mono"
+                                                            />
+                                                            <button onClick={() => savePoints(item.uuid)} className="text-green-500 hover:text-green-400"><CheckCircle2 size={14}/></button>
+                                                        </div>
+                                                    ) : (
+                                                        <span className="font-mono text-green-400 flex items-center gap-1">
+                                                            {item.points} pts
+                                                            <button onClick={() => startEditingPoints(item)} className="text-slate-600 hover:text-slate-400"><Edit3 size={10}/></button>
+                                                        </span>
+                                                    )}
                                                     <span>•</span>
                                                     <span>{item.role}</span>
                                                 </div>
@@ -590,16 +785,28 @@ function AppContent() {
                                         </div>
                                         
                                         <div className="flex items-center gap-3 self-end sm:self-auto">
-                                            {/* Painting Status Selector */}
+                                            {/* Painting Status */}
                                             <select 
                                                 value={item.status || 'pile'}
                                                 onChange={(e) => updateUnitStatus(item.uuid, e.target.value)}
-                                                className="bg-slate-900 text-xs text-slate-300 border border-slate-700 rounded px-2 py-1 focus:outline-none"
+                                                className="bg-slate-900 text-xs text-slate-300 border border-slate-700 rounded px-2 py-1 focus:outline-none max-w-[100px] truncate"
                                             >
                                                 {Object.entries(PAINT_STATUS).map(([key, val]) => (
                                                     <option key={key} value={key}>{val.label}</option>
                                                 ))}
                                             </select>
+
+                                            {/* WARGEAR CONFIG BUTTON */}
+                                            {dbUnit.wargearProfiles && (
+                                                <button 
+                                                    onClick={() => setExpandedWargearId(isWargearOpen ? null : item.uuid)}
+                                                    className={`flex items-center gap-1 text-xs px-2 py-1 rounded border transition-colors ${isWargearOpen || (item.activeWargear && item.activeWargear.length > 0) ? 'bg-blue-900/50 border-blue-500 text-blue-300' : 'bg-slate-900 border-slate-700 text-slate-400'}`}
+                                                >
+                                                    <Wrench size={10} />
+                                                    {isWargearOpen ? 'Done' : 'Gear'}
+                                                    {isWargearOpen ? <ChevronUp size={10}/> : <ChevronDown size={10}/>}
+                                                </button>
+                                            )}
 
                                             {dbUnit.sizes && dbUnit.sizes.length > 1 && (
                                                 <div className="flex items-center gap-2 bg-slate-900 rounded px-2 py-1 border border-slate-700">
@@ -612,6 +819,37 @@ function AppContent() {
                                             <button onClick={() => removeFromInventory(item.uuid)} className="text-slate-500 hover:text-red-400 p-1.5 hover:bg-slate-700 rounded"><X size={18} /></button>
                                         </div>
                                     </div>
+                                    
+                                    {/* WARGEAR EXPANSION PANEL */}
+                                    {isWargearOpen && dbUnit.wargearProfiles && (
+                                        <div className="bg-slate-900/80 p-3 rounded border border-blue-900/50 mt-1">
+                                            <div className="text-[10px] text-blue-400 font-bold uppercase mb-2">Select Active Capabilities (Multiple Allowed)</div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                {dbUnit.wargearProfiles.map(profile => {
+                                                    const isActive = (item.activeWargear || []).includes(profile.name);
+                                                    return (
+                                                        <button 
+                                                            key={profile.name}
+                                                            onClick={() => toggleWargear(item.uuid, profile.name)}
+                                                            className={`text-left text-xs p-2 rounded border transition-all ${isActive ? 'bg-blue-600 text-white border-blue-500' : 'bg-slate-800 text-slate-400 border-slate-700 hover:border-slate-600'}`}
+                                                        >
+                                                            <div className="font-bold">{profile.name}</div>
+                                                            <div className={`text-[10px] ${isActive ? 'text-blue-200' : 'text-slate-600'}`}>{profile.desc}</div>
+                                                        </button>
+                                                    )
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {/* WARGEAR PILLS (SUMMARY) */}
+                                    {item.activeWargear && item.activeWargear.length > 0 && !isWargearOpen && (
+                                        <div className="flex flex-wrap gap-1 mt-1">
+                                            {item.activeWargear.map(w => (
+                                                <span key={w} className="text-[10px] bg-blue-900/30 text-blue-300 px-1.5 py-0.5 rounded border border-blue-900/50">{w}</span>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             );
                         })
@@ -719,6 +957,39 @@ function AppContent() {
                 </div>
               </div>
 
+              {/* BATTLE PLANS SECTION */}
+              <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                  <div className="flex items-center gap-2 mb-4 text-green-400 font-bold">
+                      <FolderOpen size={18}/> <span>Battle Plans</span>
+                  </div>
+                  <div className="flex gap-2 mb-4">
+                      <input 
+                        type="text" 
+                        value={listName} 
+                        onChange={(e) => setListName(e.target.value)}
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded px-3 text-white text-sm focus:border-green-500 focus:outline-none"
+                      />
+                      <button onClick={saveCurrentList} className="bg-green-700 hover:bg-green-600 px-3 py-2 rounded text-white text-sm font-bold flex items-center gap-1"><Save size={14}/> Save</button>
+                  </div>
+                  
+                  {savedLists.length > 0 && (
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                          {savedLists.map(plan => (
+                              <div key={plan.id} className="flex items-center justify-between bg-slate-900/50 p-2 rounded border border-slate-700">
+                                  <div className="flex flex-col">
+                                      <span className="text-white text-sm font-bold">{plan.name}</span>
+                                      <span className="text-[10px] text-slate-500">{plan.targetPoints}pts • {plan.detachment?.name || 'No Detachment'}</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                      <button onClick={() => loadList(plan)} className="text-blue-400 hover:text-blue-300" title="Load"><Disc size={16}/></button>
+                                      <button onClick={() => deleteList(plan.id)} className="text-red-400 hover:text-red-300" title="Delete"><Trash2 size={16}/></button>
+                                  </div>
+                              </div>
+                          ))}
+                      </div>
+                  )}
+              </div>
+
               {suggestedDetachment && (
                   <div className="bg-gradient-to-r from-green-900/50 to-slate-900 p-4 rounded-xl border border-green-500/30 flex items-start gap-4">
                       <div className="bg-green-600/20 p-2 rounded-lg"><FileText className="text-green-400" size={24} /></div>
@@ -774,7 +1045,24 @@ function AppContent() {
                                 <div className="text-white font-medium">{unit.name}</div>
                                 <div className="text-xs text-slate-400 flex items-center gap-2">
                                     {unit.role} • <span className="text-slate-300">{unit.modelCount} Models</span>
-                                    {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => unit.synergy.includes(tag)) && (
+                                    {/* Render Active Wargear in List */}
+                                    {unit.activeWargear && unit.activeWargear.length > 0 && (
+                                        <div className="flex flex-wrap gap-1">
+                                            {unit.activeWargear.map(w => <span key={w} className="text-[8px] bg-blue-900/30 text-blue-300 px-1 rounded border border-blue-900/50">{w}</span>)}
+                                        </div>
+                                    )}
+                                    {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => {
+                                        // Re-calculate full synergy for icon display
+                                        let fullSynergy = unit.synergy || '';
+                                        const dbUnit = UNIT_DATABASE.find(db => db.id === unit.unitId);
+                                        if (dbUnit && dbUnit.wargearProfiles && unit.activeWargear) {
+                                            unit.activeWargear.forEach(pName => {
+                                                const p = dbUnit.wargearProfiles.find(x => x.name === pName);
+                                                if (p) fullSynergy += ' ' + p.tags;
+                                            });
+                                        }
+                                        return fullSynergy.includes(tag);
+                                    }) && (
                                         <span className="text-yellow-400 ml-1 flex items-center gap-0.5" title="Effective against selected enemy"><Target size={10}/> Counter</span>
                                     )}
                                 </div>
@@ -814,6 +1102,12 @@ function AppContent() {
                                         <div>
                                             <div className="text-sm font-medium text-white">{item.body.name}</div>
                                             <div className="text-[10px] text-slate-500 uppercase font-bold">Bodyguard • {item.body.modelCount} Models</div>
+                                            {/* Render Active Wargear in List */}
+                                            {item.body.activeWargear && item.body.activeWargear.length > 0 && (
+                                                <div className="flex flex-wrap gap-1 mt-0.5">
+                                                    {item.body.activeWargear.map(w => <span key={w} className="text-[8px] bg-blue-900/30 text-blue-300 px-1 rounded border border-blue-900/50">{w}</span>)}
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                     <div className="text-xs text-slate-400">{item.body.points} pts</div>
@@ -916,14 +1210,17 @@ function AppContent() {
                     </div>
                 </div>
 
-                {/* 3. STRATAGEM LIBRARY - NEW PHASE 3 FEATURE */}
+                {/* 3. STRATAGEM LIBRARY - DETACHMENT SPECIFIC */}
                 <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
                     <div className="flex items-center gap-2 mb-4">
                         <BookOpen className="text-purple-400" />
-                        <h3 className="font-bold text-white">Stratagems</h3>
+                        <div className="flex flex-col">
+                            <h3 className="font-bold text-white">Stratagems</h3>
+                            <span className="text-[10px] text-slate-400 uppercase">{activeDetachmentName}</span>
+                        </div>
                     </div>
                     <div className="space-y-3">
-                        {STRATAGEMS.map((strat, idx) => (
+                        {activeStratagems.map((strat, idx) => (
                             <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
                                 <div className="flex justify-between items-start mb-1">
                                     <span className="font-bold text-purple-300 text-sm">{strat.name}</span>
