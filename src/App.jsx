@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -56,7 +56,7 @@ const OPPONENTS = [
   { id: 'melee', name: 'Melee Rush (World Eaters)', label: 'Melee Rush', priority: ['fights_first', 'fight_on_death', 'foul_blightspawn', 'flamer', 'screen'] },
 ];
 
-// --- DEATH GUARD DATABASE (WITH LEADER PREFERENCES) ---
+// --- DEATH GUARD DATABASE ---
 const UNIT_DATABASE = [
   // --- EPIC HEROES ---
   { id: 'epic_morty', name: 'Mortarion', basePoints: 325, role: 'Epic Hero', unique: true, synergy: 'lord_of_war fly psyker anti_tank horde_clear monster', sizes: [1] },
@@ -116,8 +116,12 @@ const UNIT_DATABASE = [
   { id: 'ally_nurgling', name: 'Nurglings (Ally)', basePoints: 40, role: 'Ally', unique: false, synergy: 'infiltrate screen cheap -1_to_hit', sizes: [3, 6, 9] },
   { id: 'ally_plaguebearers', name: 'Plaguebearers (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'sticky_obj screen deep_strike', sizes: [10] },
   { id: 'ally_beast', name: 'Beast of Nurgle (Ally)', basePoints: 70, role: 'Ally', unique: false, synergy: 'durable deep_strike regenerate', sizes: [1, 2] },
+  { id: 'ally_drones', name: 'Plague Drones (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'fly fast melee', sizes: [3, 6] },
   { id: 'ally_wardog_brig', name: 'War Dog Brigand (Ally)', basePoints: 170, role: 'Ally', unique: false, synergy: 'vehicle walker shooting melta', sizes: [1] },
   { id: 'ally_wardog_karn', name: 'War Dog Karnivore (Ally)', basePoints: 140, role: 'Ally', unique: false, synergy: 'vehicle walker melee fast', sizes: [1] },
+  { id: 'ally_wardog_stalk', name: 'War Dog Stalker (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker hybrid character_sniper', sizes: [1] },
+  { id: 'ally_wardog_exec', name: 'War Dog Executioner (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker long_range autocannon', sizes: [1] },
+  { id: 'ally_wardog_hunt', name: 'War Dog Huntsman (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker anti_tank melta', sizes: [1] },
 ];
 
 function AppContent() {
@@ -134,6 +138,13 @@ function AppContent() {
   const [suggestedDetachment, setSuggestedDetachment] = useState(null);
   const [showExportModal, setShowExportModal] = useState(false);
   const [appError, setAppError] = useState(null);
+
+  // --- BATTLE MODE STATE ---
+  const [gameTurn, setGameTurn] = useState(1);
+  const [scores, setScores] = useState({ cpMe: 0, cpOpp: 0, vpMe: 0, vpOpp: 0 });
+  const [objectives, setObjectives] = useState({
+    alpha: false, beta: false, gamma: false, delta: false, epsilon: false, zeta: false
+  });
 
   useEffect(() => {
     try {
@@ -218,71 +229,39 @@ function AppContent() {
   const organizeArmy = (rawList) => {
     let unassignedUnits = JSON.parse(JSON.stringify(rawList));
     let squads = [];
-
-    // 1. Separate Characters and Bodyguards
     const characters = unassignedUnits.filter(u => u.role === 'Character' || u.role === 'Epic Hero');
     const bodies = unassignedUnits.filter(u => u.role !== 'Character' && u.role !== 'Epic Hero');
-
-    // 2. Identify potential bodyguards (Battleline/Infantry usually)
-    // We work with 'bodies' array directly to assign leaders
     let squadMap = bodies.map(b => ({ body: b, leaders: [] }));
     let attachedCharUUIDs = new Set();
 
-    // 3. Assign Leaders to optimal squads
     characters.forEach(char => {
         const dbChar = UNIT_DATABASE.find(db => db.id === char.unitId);
-        if (!dbChar || !dbChar.leads) return; // Character leads nothing
-
-        // Find best bodyguard in list
+        if (!dbChar || !dbChar.leads) return; 
         const bestBodyguardIndex = squadMap.findIndex(s => {
             const dbBody = UNIT_DATABASE.find(db => db.id === s.body.unitId);
             if (!dbBody) return false;
-            // Check if this body is in the leader's preference list
             if (!dbChar.leads.includes(dbBody.id)) return false;
-            
-            // Check slots
-            // Plague Marines (tr_pm) take 2 leaders if one is Virion
             if (dbBody.id === 'tr_pm') {
                 if (s.leaders.length >= 2) return false;
-                if (s.leaders.length === 1) {
-                    // Check if existing leader or current char is Virion
-                    const existingLeaderDB = UNIT_DATABASE.find(db => db.id === s.leaders[0].unitId);
-                    const currentIsVirion = dbChar.isVirion;
-                    const existingIsVirion = existingLeaderDB?.isVirion;
-                    // Rule: Max 1 Lord/Sorc, Max 1 Virion. Wait, Rule is: 2 leaders allowed if one is Chaos Lord/Sorc etc AND one is Virion.
-                    // Simplified: We allow 2 if they are different units and total < 2.
-                    return true; 
-                }
+                if (s.leaders.length === 1) return true;
                 return true;
             } else {
-                // Standard Bodyguard (Terminators, Poxwalkers)
                 return s.leaders.length === 0;
             }
         });
-
         if (bestBodyguardIndex !== -1) {
             squadMap[bestBodyguardIndex].leaders.push(char);
             attachedCharUUIDs.add(char.uuid);
         }
     });
 
-    // 4. Construct final display list
-    // Add squads
     squadMap.forEach(s => {
-        if (s.leaders.length > 0) {
-            squads.push({ type: 'squad', body: s.body, leaders: s.leaders });
-        } else {
-            squads.push({ type: 'single', unit: s.body });
-        }
+        if (s.leaders.length > 0) squads.push({ type: 'squad', body: s.body, leaders: s.leaders });
+        else squads.push({ type: 'single', unit: s.body });
     });
-
-    // Add unattached characters (Lone Operatives)
     characters.forEach(char => {
-        if (!attachedCharUUIDs.has(char.uuid)) {
-            squads.push({ type: 'single', unit: char });
-        }
+        if (!attachedCharUUIDs.has(char.uuid)) squads.push({ type: 'single', unit: char });
     });
-
     return squads;
   };
 
@@ -420,12 +399,25 @@ function AppContent() {
       navigator.clipboard.writeText(text).then(() => showNotification("Copied!")).catch(() => showNotification("Failed to copy", "error"));
   };
 
+  const downloadTextFile = () => {
+      const text = generateExportText();
+      const element = document.createElement("a");
+      const file = new Blob([text], {type: 'text/plain'});
+      element.href = URL.createObjectURL(file);
+      element.download = "death_guard_list.txt";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+  };
+
   const filteredDatabase = UNIT_DATABASE.filter(unit => 
     unit.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     unit.role.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const organizedList = organizeArmy(currentList);
+
+  const contagionRange = gameTurn === 1 ? 3 : (gameTurn === 2 ? 6 : 9);
 
   return (
     <div className="min-h-screen bg-slate-900 text-slate-200 font-sans selection:bg-green-500/30" style={{backgroundColor: '#0f172a', color: '#e2e8f0'}}>
@@ -444,16 +436,19 @@ function AppContent() {
       </header>
 
       <main className="max-w-5xl mx-auto p-4 md:p-6">
-        <div className="flex gap-4 mb-8 border-b border-slate-800">
-          <button onClick={() => setActiveTab('inventory')} className={`pb-4 px-2 flex items-center gap-2 transition-all ${activeTab === 'inventory' ? 'border-b-2 border-green-500 text-green-400' : 'text-slate-500 hover:text-slate-300'}`}>
+        <div className="flex gap-4 mb-8 border-b border-slate-800 overflow-x-auto pb-2">
+          <button onClick={() => setActiveTab('inventory')} className={`pb-4 px-2 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'inventory' ? 'border-b-2 border-green-500 text-green-400' : 'text-slate-500 hover:text-slate-300'}`}>
             <Box size={18} /> Collection <span className="bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full text-xs">{inventory.length}</span>
           </button>
-          <button onClick={() => setActiveTab('builder')} className={`pb-4 px-2 flex items-center gap-2 transition-all ${activeTab === 'builder' ? 'border-b-2 border-green-500 text-green-400' : 'text-slate-500 hover:text-slate-300'}`}>
+          <button onClick={() => setActiveTab('builder')} className={`pb-4 px-2 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'builder' ? 'border-b-2 border-green-500 text-green-400' : 'text-slate-500 hover:text-slate-300'}`}>
             <Zap size={18} /> Auto-Builder
+          </button>
+          <button onClick={() => setActiveTab('battle')} className={`pb-4 px-2 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'battle' ? 'border-b-2 border-red-500 text-red-400' : 'text-slate-500 hover:text-slate-300'}`}>
+            <Sword size={18} /> Command Bunker
           </button>
         </div>
         
-        {activeTab === 'inventory' ? (
+        {activeTab === 'inventory' && (
             <div className="space-y-8">
               {/* MY HANGAR */}
               <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden flex flex-col h-[500px]">
@@ -557,8 +552,9 @@ function AppContent() {
                 </div>
               </div>
             </div>
-        ) : (
-            // BUILDER TAB
+        )}
+
+        {activeTab === 'builder' && (
             <div className="space-y-6">
               <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
                 <div className="flex flex-col gap-6">
@@ -681,7 +677,6 @@ function AppContent() {
                                 <span className="font-mono text-green-400 font-bold">{squadPoints} pts</span>
                              </div>
                              <div className="p-2 space-y-2">
-                                {/* Leaders */}
                                 {item.leaders.map((l, lIdx) => (
                                     <div key={`l-${lIdx}`} className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-yellow-500/20">
                                         <div className="flex items-center gap-2">
@@ -694,7 +689,6 @@ function AppContent() {
                                         <div className="text-xs text-slate-400">{l.points} pts</div>
                                     </div>
                                 ))}
-                                {/* Bodyguard */}
                                 <div className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-slate-700">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-1 h-6 rounded-full ${roleColor(item.body.role, true)}`}></div>
@@ -716,9 +710,121 @@ function AppContent() {
             </div>
         )}
 
+        {/* --- COMMAND BUNKER (PHASE 1) --- */}
+        {activeTab === 'battle' && (
+            <div className="space-y-6">
+                
+                {/* 1. TURN & CONTAGION TRACKER */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                    <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Timer className="text-green-400" />
+                            <h2 className="text-lg font-bold text-white">Battle Round</h2>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setGameTurn(Math.max(1, gameTurn - 1))} className="w-8 h-8 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white">-</button>
+                            <span className="text-2xl font-bold text-white w-8 text-center">{gameTurn}</span>
+                            <button onClick={() => setGameTurn(Math.min(5, gameTurn + 1))} className="w-8 h-8 rounded bg-green-600 hover:bg-green-500 flex items-center justify-center text-white">+</button>
+                        </div>
+                    </div>
+                    <div className="p-6 text-center">
+                        <div className="text-sm text-slate-400 uppercase tracking-widest font-bold mb-2">Current Nurgle's Gift Range</div>
+                        <div className="text-6xl font-black text-green-500 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
+                            {contagionRange}"
+                        </div>
+                        <p className="text-xs text-slate-500 mt-2">
+                            {gameTurn === 1 ? "Enemy units within 3\" get -1 Toughness." : 
+                             gameTurn === 2 ? "Range expands to 6\". Sticky objectives active." : 
+                             "Maximum spread. 9\" aura of decay."}
+                        </p>
+                    </div>
+                </div>
+
+                {/* 2. SCOREBOARD */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* PLAYER */}
+                    <div className="bg-slate-800 rounded-xl border border-green-500/30 p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                        <h3 className="text-center text-green-400 font-bold mb-4">YOU</h3>
+                        
+                        <div className="flex justify-between mb-4">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">CP</div>
+                                <div className="text-2xl font-bold text-white">{scores.cpMe}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, cpMe: Math.max(0, scores.cpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, cpMe: scores.cpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                            <div className="text-center border-l border-slate-700 pl-4">
+                                <div className="text-xs text-slate-500 mb-1">VP</div>
+                                <div className="text-2xl font-bold text-white">{scores.vpMe}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, vpMe: Math.max(0, scores.vpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, vpMe: scores.vpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* OPPONENT */}
+                    <div className="bg-slate-800 rounded-xl border border-red-500/30 p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                        <h3 className="text-center text-red-400 font-bold mb-4">ENEMY</h3>
+                        
+                        <div className="flex justify-between mb-4">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">CP</div>
+                                <div className="text-2xl font-bold text-white">{scores.cpOpp}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, cpOpp: Math.max(0, scores.cpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, cpOpp: scores.cpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                            <div className="text-center border-l border-slate-700 pl-4">
+                                <div className="text-xs text-slate-500 mb-1">VP</div>
+                                <div className="text-2xl font-bold text-white">{scores.vpOpp}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, vpOpp: Math.max(0, scores.vpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, vpOpp: scores.vpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. STICKY OBJECTIVES */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Flag className="text-yellow-500" />
+                        <h3 className="font-bold text-white">Sticky Objectives</h3>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-4">Track infected objectives (Remorseless). Remain under control even if you leave.</p>
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta'].map(obj => {
+                            const key = obj.toLowerCase();
+                            const isActive = objectives[key];
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setObjectives({...objectives, [key]: !isActive})}
+                                    className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${isActive ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                                >
+                                    <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-slate-700'}`}></div>
+                                    <span className="font-bold text-sm">{obj}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+            </div>
+        )}
+
       </main>
 
-      {/* Notifications and Modals remain same as before, just ensuring they render */}
+      {/* Notifications and Modals */}
       {notification && (
         <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-2xl transform transition-all animate-bounce ${notification.type === 'error' ? 'bg-red-600' : 'bg-green-600'} text-white font-medium flex items-center gap-2 z-50`}>
           {notification.type === 'success' ? <CheckCircle2 size={18} /> : <Circle size={18} />}
@@ -738,11 +844,7 @@ function AppContent() {
                       </button>
                   </div>
                   <div className="p-4 flex-1 overflow-hidden">
-                      <textarea 
-                        readOnly 
-                        value={generateExportText()}
-                        className="w-full h-64 md:h-96 bg-slate-950 text-green-400 font-mono text-xs md:text-sm p-4 rounded border border-slate-700 focus:outline-none resize-none"
-                      />
+                      <textarea readOnly value={generateExportText()} className="w-full h-64 md:h-96 bg-slate-950 text-green-400 font-mono text-xs md:text-sm p-4 rounded border border-slate-700 focus:outline-none resize-none"/>
                   </div>
                   <div className="p-4 border-t border-slate-700 bg-slate-900/50 rounded-b-xl flex gap-3 justify-end">
                       <button onClick={copyToClipboard} className="flex items-center gap-2 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded font-medium transition-colors">
