@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -34,6 +34,16 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// --- DATA: STRATAGEMS ---
+const STRATAGEMS = [
+  { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits. Critical for punching through armor.' },
+  { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1]. If in range of infected objective, gain [Sustained Hits 2] instead.' },
+  { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit). Essential defensive tool.' },
+  { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover]. Spotter unit must see target.' },
+  { name: 'Disgustingly Resilient', cp: 2, phase: 'Fight/Shooting', desc: 'Reduce Damage characteristic of attacks by 1 (to min 1). Expensive but saves terminators.' },
+  { name: 'Gifts of Decay', cp: 1, phase: 'Command', desc: 'Heal D3 wounds on a Character or Vehicle. Nurgle loves life.' },
+];
 
 // --- DATA: PAINTING STATUS ---
 const PAINT_STATUS = {
@@ -166,6 +176,10 @@ function AppContent() {
   const [objectives, setObjectives] = useState({
     alpha: false, beta: false, gamma: false, delta: false, epsilon: false, zeta: false
   });
+  
+  // --- PHASE 3: MATH STATE ---
+  const [mathStr, setMathStr] = useState(4);
+  const [mathTough, setMathTough] = useState(4);
 
   useEffect(() => {
     try {
@@ -421,6 +435,25 @@ function AppContent() {
   const showNotification = (msg, type='success') => {
     setNotification({ msg, type });
     setTimeout(() => setNotification(null), 3000);
+  };
+
+  // --- CALCULATE WOUND ROLL (NURGLES MATH) ---
+  const getWoundRoll = () => {
+      // Logic: S vs T. 
+      // If S >= 2*T -> 2+
+      // If S > T -> 3+
+      // If S = T -> 4+
+      // If S < T -> 5+
+      // If S <= T/2 -> 6+
+      // Nurgle Gift: Subtract 1 from T if range is met.
+      const modifiedT = Math.max(1, mathTough - 1); 
+      let needed = 0;
+      if (mathStr >= modifiedT * 2) needed = 2;
+      else if (mathStr > modifiedT) needed = 3;
+      else if (mathStr === modifiedT) needed = 4;
+      else if (mathStr <= modifiedT / 2) needed = 6;
+      else needed = 5;
+      return needed;
   };
 
   const generateExportText = () => {
@@ -796,7 +829,7 @@ function AppContent() {
             </div>
         )}
 
-        {/* --- COMMAND BUNKER (PHASE 1) --- */}
+        {/* --- COMMAND BUNKER (PHASE 1 + PHASE 3) --- */}
         {activeTab === 'battle' && (
             <div className="space-y-6">
                 
@@ -844,7 +877,66 @@ function AppContent() {
                     </div>
                 </div>
 
-                {/* 2. SCOREBOARD */}
+                {/* 2. NURGLE'S MATH (WOUND CALCULATOR) - NEW PHASE 3 FEATURE */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Percent className="text-blue-400" />
+                        <h3 className="font-bold text-white">Nurgle's Math (Wound Roll)</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">My Strength</label>
+                            <input 
+                                type="number" 
+                                value={mathStr}
+                                onChange={(e) => setMathStr(parseInt(e.target.value) || 0)}
+                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">Enemy Toughness</label>
+                            <input 
+                                type="number" 
+                                value={mathTough}
+                                onChange={(e) => setMathTough(parseInt(e.target.value) || 0)}
+                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="bg-slate-900/50 p-3 rounded border border-slate-700 flex justify-between items-center">
+                        <div className="text-xs text-slate-400">
+                            <div>Target T modified to: <span className="text-green-400 font-bold">{Math.max(1, mathTough - 1)}</span></div>
+                            <div className="text-[10px] text-slate-500">(Due to Nurgle's Gift Aura)</div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-xs text-slate-400 uppercase">Wound Roll</div>
+                            <div className="text-3xl font-black text-white">{getWoundRoll()}+</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. STRATAGEM LIBRARY - NEW PHASE 3 FEATURE */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <BookOpen className="text-purple-400" />
+                        <h3 className="font-bold text-white">Stratagems</h3>
+                    </div>
+                    <div className="space-y-3">
+                        {STRATAGEMS.map((strat, idx) => (
+                            <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className="font-bold text-purple-300 text-sm">{strat.name}</span>
+                                    <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded border border-slate-600">{strat.cp}CP</span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-mono mb-1 uppercase">{strat.phase}</div>
+                                <div className="text-xs text-slate-300">{strat.desc}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 4. SCOREBOARD */}
                 <div className="grid grid-cols-2 gap-4">
                     {/* PLAYER */}
                     <div className="bg-slate-800 rounded-xl border border-green-500/30 p-4 relative overflow-hidden">
@@ -897,7 +989,7 @@ function AppContent() {
                     </div>
                 </div>
 
-                {/* 3. STICKY OBJECTIVES */}
+                {/* 5. STICKY OBJECTIVES */}
                 <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
                     <div className="flex items-center gap-2 mb-4">
                         <Flag className="text-yellow-500" />
