@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent, Edit3, FolderOpen, Disc, Wrench, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent, Edit3, FolderOpen, Disc, Wrench, ChevronDown, ChevronUp, ShoppingBag } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -294,6 +294,7 @@ function AppContent() {
   const [activeTab, setActiveTab] = useState('inventory');
   const [inventory, setInventory] = useState([]);
   const [currentList, setCurrentList] = useState([]);
+  const [dreamList, setDreamList] = useState([]); // New state for wishlist
   const [targetPoints, setTargetPoints] = useState(2000);
   const [notification, setNotification] = useState(null);
   const [sortMethod, setSortMethod] = useState('role'); 
@@ -479,6 +480,7 @@ function AppContent() {
       setSavedLists(prev => prev.filter(p => p.id !== id));
   };
 
+  // --- SQUAD ORGANIZATION LOGIC ---
   const organizeArmy = (rawList) => {
     let unassignedUnits = JSON.parse(JSON.stringify(rawList));
     let squads = [];
@@ -516,6 +518,137 @@ function AppContent() {
         if (!attachedCharUUIDs.has(char.uuid)) squads.push({ type: 'single', unit: char });
     });
     return squads;
+  };
+
+  const safeGetUtility = (u, opp) => {
+    let score = u.points || 0;
+    const oppData = OPPONENTS.find(o => o.id === opp);
+    const dbUnit = UNIT_DATABASE.find(db => db.id === u.unitId);
+    
+    // --- NEW LOGIC: MERGE SYNERGIES ---
+    let fullSynergy = u.synergy || '';
+    
+    // Append active wargear synergies
+    if (dbUnit && dbUnit.wargearProfiles && u.activeWargear) {
+        u.activeWargear.forEach(profileName => {
+            const profile = dbUnit.wargearProfiles.find(p => p.name === profileName);
+            if (profile) fullSynergy += ' ' + profile.tags;
+        });
+    }
+
+    if (oppData && oppData.priority.length > 0) {
+        if (oppData.priority.some(tag => fullSynergy.includes(tag))) score *= 1.5;
+    }
+    return score;
+  };
+
+  // --- ACQUISITION LOGIC ---
+  const generateDreamList = () => {
+    try {
+        let newList = [];
+        let currentPoints = 0;
+        
+        // We create a "Virtual Pool" of units to pick from
+        // 1. All owned units (Prioritized if 'Owned' boost is on)
+        // 2. All DB units (Up to rule of 3 limits)
+
+        let pool = [];
+
+        // Add owned units
+        inventory.forEach(invUnit => {
+            pool.push({ ...invUnit, isOwned: true });
+        });
+
+        // Add potential new units (up to 3/6 limit) from DB
+        UNIT_DATABASE.forEach(dbUnit => {
+            const limit = (dbUnit.role === 'Battleline' || dbUnit.role === 'Dedicated Transport') ? 6 : 3;
+            const uniqueLimit = dbUnit.unique ? 1 : limit;
+            
+            // Only add if we don't have enough in inventory? No, add freely and let algorithm pick best.
+            // Actually, we should filter out uniques we already own to prevent duplicates in pool.
+            const ownedCount = inventory.filter(u => u.unitId === dbUnit.id).length;
+            const remainingSlots = Math.max(0, uniqueLimit - ownedCount);
+
+            for(let i=0; i < remainingSlots; i++) {
+                pool.push({
+                    ...dbUnit,
+                    unitId: dbUnit.id,
+                    uuid: `dream-${dbUnit.id}-${i}`,
+                    modelCount: dbUnit.sizes[0], // default min size
+                    points: dbUnit.basePoints,
+                    isOwned: false,
+                    activeWargear: [] // Default wargear
+                });
+            }
+        });
+
+        // --- SELECTION LOGIC (Similar to generateSmartList but simpler) ---
+
+        // 1. Mandatory Warlord
+        const characters = pool.filter(u => u.role === 'Character' || u.role === 'Epic Hero');
+        if (characters.length > 0) {
+            characters.sort((a,b) => {
+                let scoreA = safeGetUtility(a, opponent);
+                let scoreB = safeGetUtility(b, opponent);
+                if (a.isOwned) scoreA *= 1.2; // Slight bias to what you own
+                if (b.isOwned) scoreB *= 1.2;
+                return scoreB - scoreA;
+            });
+            
+            const warlord = characters[0];
+            newList.push(warlord);
+            currentPoints += warlord.points;
+            
+            // Remove from pool
+            const idx = pool.findIndex(u => u.uuid === warlord.uuid);
+            if (idx > -1) pool.splice(idx, 1);
+        }
+
+        // 2. Battleline (Try for 2)
+        const battleline = pool.filter(u => u.role === 'Battleline');
+        for(let i=0; i<2; i++) {
+            if (battleline[i] && currentPoints + battleline[i].points <= targetPoints) {
+                newList.push(battleline[i]);
+                currentPoints += battleline[i].points;
+                const idx = pool.findIndex(u => u.uuid === battleline[i].uuid);
+                if (idx > -1) pool.splice(idx, 1);
+            }
+        }
+
+        // 3. Fill Remainder
+        pool.sort((a,b) => {
+            let scoreA = safeGetUtility(a, opponent);
+            let scoreB = safeGetUtility(b, opponent);
+            if (a.isOwned) scoreA *= 1.2; 
+            if (b.isOwned) scoreB *= 1.2;
+            return scoreB - scoreA;
+        });
+
+        for (const unit of pool) {
+            // Rule of 3/6 checks
+            if (unit.unique && newList.some(u => u.unitId === unit.unitId)) continue;
+            const currentCount = newList.filter(u => u.unitId === unit.unitId).length;
+            const isExempt = unit.role === 'Battleline' || unit.role === 'Dedicated Transport' || unit.role === 'Ally'; 
+            if (!isExempt && currentCount >= 3) continue;
+            if (isExempt && currentCount >= 6) continue;
+            
+            // Character Cap
+            const isChar = unit.role === 'Character' || unit.role === 'Epic Hero';
+            const charCount = newList.filter(u => u.role === 'Character' || u.role === 'Epic Hero').length;
+            if (isChar && charCount >= 5 && targetPoints <= 2000) continue; 
+
+            if (currentPoints + unit.points <= targetPoints) {
+                newList.push(unit);
+                currentPoints += unit.points;
+            }
+        }
+
+        setDreamList(newList);
+        showNotification("Acquisition List Generated!");
+
+    } catch (err) {
+        setAppError("Dream Builder failed: " + err.message);
+    }
   };
 
   const generateSmartList = () => {
@@ -559,28 +692,6 @@ function AppContent() {
                 currentPoints += battleline[i].points;
             }
         }
-
-        const safeGetUtility = (u, opp) => {
-             let score = u.points || 0;
-             const oppData = OPPONENTS.find(o => o.id === opp);
-             const dbUnit = UNIT_DATABASE.find(db => db.id === u.unitId);
-             
-             // --- NEW LOGIC: MERGE SYNERGIES ---
-             let fullSynergy = u.synergy || '';
-             
-             // Append active wargear synergies
-             if (dbUnit && dbUnit.wargearProfiles && u.activeWargear) {
-                 u.activeWargear.forEach(profileName => {
-                     const profile = dbUnit.wargearProfiles.find(p => p.name === profileName);
-                     if (profile) fullSynergy += ' ' + profile.tags;
-                 });
-             }
-
-             if (oppData && oppData.priority.length > 0) {
-                 if (oppData.priority.some(tag => fullSynergy.includes(tag))) score *= 1.5;
-             }
-             return score;
-        };
 
         availableInventory.sort((a, b) => {
             let scoreA = safeGetUtility(a, opponent);
@@ -710,6 +821,9 @@ function AppContent() {
           <button onClick={() => setActiveTab('battle')} className={`pb-4 px-2 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'battle' ? 'border-b-2 border-red-500 text-red-400' : 'text-slate-500 hover:text-slate-300'}`}>
             <Sword size={18} /> Command Bunker
           </button>
+          <button onClick={() => setActiveTab('wishlist')} className={`pb-4 px-2 flex items-center gap-2 transition-all whitespace-nowrap ${activeTab === 'wishlist' ? 'border-b-2 border-yellow-500 text-yellow-400' : 'text-slate-500 hover:text-slate-300'}`}>
+            <ShoppingBag size={18} /> Acquisitions
+          </button>
         </div>
         
         {activeTab === 'inventory' && (
@@ -785,7 +899,7 @@ function AppContent() {
                                         </div>
                                         
                                         <div className="flex items-center gap-3 self-end sm:self-auto">
-                                            {/* Painting Status */}
+                                            {/* Painting Status Selector */}
                                             <select 
                                                 value={item.status || 'pile'}
                                                 onChange={(e) => updateUnitStatus(item.uuid, e.target.value)}
@@ -899,6 +1013,118 @@ function AppContent() {
                   })}
                 </div>
               </div>
+            </div>
+        )}
+
+        {/* --- ACQUISITIONS (WISHLIST) TAB --- */}
+        {activeTab === 'wishlist' && (
+            <div className="space-y-6">
+                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                    <div className="flex flex-col gap-6">
+                        <div className="flex items-center justify-between border-b border-slate-700 pb-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <ShoppingBag className="text-yellow-500" /> Vector Expansion
+                                </h2>
+                                <p className="text-slate-400 text-sm">Generate optimal lists including units you don't own yet.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
+                                    <Target size={14}/> Target Game Size
+                                </label>
+                                <select value={targetPoints} onChange={(e) => setTargetPoints(parseInt(e.target.value))} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
+                                    <option value="500">500 pts (Combat Patrol)</option>
+                                    <option value="1000">1000 pts (Incursion)</option>
+                                    <option value="1500">1500 pts (Strike Force)</option>
+                                    <option value="2000">2000 pts (Strike Force)</option>
+                                    <option value="3000">3000 pts (Onslaught)</option>
+                                </select>
+                            </div>
+
+                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
+                                    <Skull size={14} className="text-red-400"/> Enemy Faction
+                                </label>
+                                <select value={opponent} onChange={(e) => setOpponent(e.target.value)} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
+                                    {OPPONENTS.map(op => (<option key={op.id} value={op.id}>{op.label}</option>))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onClick={generateDreamList} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-yellow-900/20 font-bold">
+                            <Zap size={20} /> <span>Calculate Dream List</span>
+                        </button>
+                    </div>
+                </div>
+
+                {dreamList.length > 0 && (
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 min-h-[400px]">
+                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">Recommended Acquisitions</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-slate-400 text-sm">
+                                        Total Points: <span className="text-white font-bold">{dreamList.reduce((a, b) => a + b.points, 0)}</span>
+                                    </span>
+                                    <span className="text-slate-500 text-sm mx-2">|</span>
+                                    <span className="text-yellow-400 text-sm font-bold">
+                                        To Buy: {dreamList.filter(u => !u.isOwned).reduce((a,b) => a + b.points, 0)} pts
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* Owned Units */}
+                            <div className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">From Collection</div>
+                            {dreamList.filter(u => u.isOwned).map((unit, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/30 rounded border border-green-900/30 opacity-75">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
+                                        <div>
+                                            <div className="text-white font-medium">{unit.name}</div>
+                                            <div className="text-xs text-slate-400">{unit.role}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 size={14} className="text-green-500"/>
+                                        <div className="font-mono text-slate-300">{unit.points} pts</div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Missing Units */}
+                            {dreamList.some(u => !u.isOwned) && (
+                                <>
+                                    <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-6 mb-2">Recommended Purchases</div>
+                                    {dreamList.filter(u => !u.isOwned).map((unit, idx) => (
+                                        <div key={`buy-${idx}`} className="flex items-center justify-between p-3 bg-yellow-900/10 rounded border border-yellow-500/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
+                                                <div>
+                                                    <div className="text-white font-medium">{unit.name}</div>
+                                                    <div className="text-xs text-slate-400 flex items-center gap-2">
+                                                        {unit.role}
+                                                        {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => (unit.synergy || '').includes(tag)) && (
+                                                            <span className="text-yellow-400 ml-1 flex items-center gap-0.5" title="Effective against selected enemy"><Target size={10}/> Counter</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ShoppingBag size={14} className="text-yellow-500"/>
+                                                <div className="font-mono text-yellow-200 font-bold">{unit.points} pts</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         )}
 
