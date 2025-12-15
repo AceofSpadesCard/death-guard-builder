@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings2, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -34,6 +34,14 @@ class ErrorBoundary extends React.Component {
     return this.props.children;
   }
 }
+
+// --- DATA: PLAGUES (SPREAD THE SICKNESS) ---
+const SICKNESSES = [
+  { id: 'skullsquirm', name: 'Skullsquirm Blight', effect: 'Worsen BS and WS by 1.' },
+  { id: 'rattlejoint', name: 'Rattlejoint Ague', effect: 'Worsen Save characteristic by 1.' },
+  { id: 'scabrous', name: 'Scabrous Soulrot', effect: 'Worsen Leadership and OC by 1.' },
+  { id: 'poxes_bonus', name: 'Lord of Poxes (Unit Only)', effect: 'Worsen Save & -1 to Hit (Specific Unit Only).' }
+];
 
 // --- DATA: DETACHMENTS ---
 const DETACHMENTS = [
@@ -141,6 +149,7 @@ function AppContent() {
 
   // --- BATTLE MODE STATE ---
   const [gameTurn, setGameTurn] = useState(1);
+  const [selectedSickness, setSelectedSickness] = useState(SICKNESSES[0].id);
   const [scores, setScores] = useState({ cpMe: 0, cpOpp: 0, vpMe: 0, vpOpp: 0 });
   const [objectives, setObjectives] = useState({
     alpha: false, beta: false, gamma: false, delta: false, epsilon: false, zeta: false
@@ -732,11 +741,29 @@ function AppContent() {
                         <div className="text-6xl font-black text-green-500 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
                             {contagionRange}"
                         </div>
-                        <p className="text-xs text-slate-500 mt-2">
-                            {gameTurn === 1 ? "Enemy units within 3\" get -1 Toughness." : 
-                             gameTurn === 2 ? "Range expands to 6\". Sticky objectives active." : 
-                             "Maximum spread. 9\" aura of decay."}
-                        </p>
+                        
+                        {/* PLAGUE SELECTOR */}
+                        <div className="mt-4 pt-4 border-t border-slate-700">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <Biohazard size={16} className="text-yellow-500" />
+                                <span className="text-xs font-bold text-slate-300 uppercase">Active Plague</span>
+                            </div>
+                            <select 
+                                value={selectedSickness} 
+                                onChange={(e) => setSelectedSickness(e.target.value)}
+                                className="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg p-2 w-full max-w-xs focus:outline-none focus:border-green-500"
+                            >
+                                {SICKNESSES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="text-xs text-slate-400 mt-4 bg-slate-900/50 p-3 rounded border border-slate-700 inline-block text-left">
+                            <div className="font-bold text-green-400 mb-1">AURA EFFECTS:</div>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>Subtract 1 from Toughness</li>
+                                <li>{SICKNESSES.find(s => s.id === selectedSickness)?.effect}</li>
+                            </ul>
+                        </div>
                     </div>
                 </div>
 
