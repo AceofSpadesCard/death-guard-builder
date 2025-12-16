@@ -169,28 +169,28 @@ const OPPONENTS = [
   { id: 'melee', name: 'Melee Rush (World Eaters)', label: 'Melee Rush', priority: ['fights_first', 'fight_on_death', 'foul_blightspawn', 'flamer', 'screen'] },
 ];
 
-// --- DEATH GUARD DATABASE ---
+// --- DEATH GUARD DATABASE (META-TUNED 10th ED) ---
 const UNIT_DATABASE = [
   // --- EPIC HEROES ---
-  { id: 'epic_morty', name: 'Mortarion', basePoints: 325, role: 'Epic Hero', unique: true, synergy: 'lord_of_war fly psyker anti_tank horde_clear monster', sizes: [1] },
-  { id: 'epic_typhus', name: 'Typhus', basePoints: 80, role: 'Epic Hero', unique: true, synergy: 'psyker mortal horde_clear buff_poxwalkers deep_strike', sizes: [1], leads: ['tr_pox', 'el_ds', 'el_bl'] },
+  { id: 'epic_morty', name: 'Mortarion', basePoints: 325, role: 'Epic Hero', unique: true, synergy: 'lord_of_war fly psyker anti_tank horde_clear monster meta_centerpiece', sizes: [1] },
+  { id: 'epic_typhus', name: 'Typhus', basePoints: 80, role: 'Epic Hero', unique: true, synergy: 'psyker mortal horde_clear buff_poxwalkers deep_strike meta_staple', sizes: [1], leads: ['el_ds', 'el_bl', 'tr_pox'] }, // FIXED LEADER PRIORITY
   
   // --- CHARACTERS ---
-  { id: 'hq_lord_poxes', name: 'Lord of Poxes', basePoints: 75, role: 'Character', unique: false, synergy: 'stealth contagion_buff anti_infantry lone_operative', sizes: [1], leads: ['tr_pm'] },
+  { id: 'hq_lord_poxes', name: 'Lord of Poxes', basePoints: 75, role: 'Character', unique: false, synergy: 'stealth contagion_buff anti_infantry lone_operative meta_new', sizes: [1], leads: ['tr_pm'] },
   { id: 'hq_lord', name: 'Death Guard Chaos Lord', basePoints: 65, role: 'Character', unique: false, synergy: 'reroll_1s aura cheap_hq', sizes: [1], leads: ['tr_pm'] },
   { id: 'hq_lord_term', name: 'DG Chaos Lord in Terminator Armour', basePoints: 85, role: 'Character', unique: false, synergy: 'terminator_armor mortal_aura deep_strike', sizes: [1], leads: ['el_bl', 'el_ds'] },
   { id: 'hq_sorc', name: 'DG Sorcerer in Power Armour', basePoints: 60, role: 'Character', unique: false, synergy: 'psyker -1_to_hit debuff', sizes: [1], leads: ['tr_pm'] },
   { id: 'hq_sorc_term', name: 'DG Sorcerer in Terminator Armour', basePoints: 70, role: 'Character', unique: false, synergy: 'psyker terminator_armor -1_dmg', sizes: [1], leads: ['el_bl', 'el_ds'] },
-  { id: 'hq_lov', name: 'Lord of Virulence', basePoints: 80, role: 'Character', unique: false, synergy: 'buff_blast anti_infantry terminator_armor', sizes: [1], leads: ['el_bl', 'el_ds'] },
+  { id: 'hq_lov', name: 'Lord of Virulence', basePoints: 80, role: 'Character', unique: false, synergy: 'buff_blast anti_infantry terminator_armor meta_staple', sizes: [1], leads: ['el_bl', 'el_ds'] }, // Good with PBCs
   { id: 'hq_loc', name: 'Lord of Contagion', basePoints: 80, role: 'Character', unique: false, synergy: 'melee_beatstick terminator_armor reroll_hits', sizes: [1], leads: ['el_ds', 'el_bl'] },
   { id: 'hq_dp', name: 'Death Guard Daemon Prince', basePoints: 160, role: 'Character', unique: false, synergy: 'monster melee invuln fnp_aura', sizes: [1] },
   { id: 'hq_dp_wings', name: 'DG Daemon Prince with Wings', basePoints: 195, role: 'Character', unique: false, synergy: 'monster melee fly fast', sizes: [1] },
   { id: 'hq_malignant', name: 'Malignant Plaguecaster', basePoints: 65, role: 'Character', unique: false, synergy: 'psyker mortal -1_to_wound', sizes: [1], leads: ['tr_pm'] },
   
   // --- VIRION ---
-  { id: 'vir_foul', name: 'Foul Blightspawn', basePoints: 50, role: 'Character', unique: false, synergy: 'fights_first anti_charge torrent flamer', sizes: [1], leads: ['tr_pm'], isVirion: true },
-  { id: 'vir_bio', name: 'Biologus Putrifier', basePoints: 50, role: 'Character', unique: false, synergy: 'lethal_hits_buff crit_5+ grenade', sizes: [1], leads: ['tr_pm'], isVirion: true },
-  { id: 'vir_tally', name: 'Tallyman', basePoints: 45, role: 'Character', unique: false, synergy: 'cp_generation +1_to_hit', sizes: [1], leads: ['tr_pm'], isVirion: true },
+  { id: 'vir_foul', name: 'Foul Blightspawn', basePoints: 50, role: 'Character', unique: false, synergy: 'fights_first anti_charge torrent flamer meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true },
+  { id: 'vir_bio', name: 'Biologus Putrifier', basePoints: 50, role: 'Character', unique: false, synergy: 'lethal_hits_buff crit_5+ grenade meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true },
+  { id: 'vir_tally', name: 'Tallyman', basePoints: 45, role: 'Character', unique: false, synergy: 'cp_generation +1_to_hit meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true },
   { id: 'vir_surgeon', name: 'Plague Surgeon', basePoints: 65, role: 'Character', unique: false, synergy: 'heal resurrect fnp_buff', sizes: [1], leads: ['tr_pm'], isVirion: true },
   { id: 'vir_icon', name: 'Noxious Blightbringer', basePoints: 50, role: 'Character', unique: false, synergy: 'move_buff battleshock', sizes: [1], leads: ['tr_pm'], isVirion: true },
 
@@ -201,7 +201,7 @@ const UNIT_DATABASE = [
       basePoints: 90, 
       role: 'Battleline', 
       unique: false, 
-      synergy: 'sticky_obj special_weapons lethal_hits', 
+      synergy: 'sticky_obj special_weapons lethal_hits meta_core', 
       sizes: [5, 10],
       wargearProfiles: [
           { name: 'Heavy Melee', desc: 'Heavy Plague Weapons / Bubotic', tags: 'melee' },
@@ -210,11 +210,11 @@ const UNIT_DATABASE = [
           { name: 'Standard Bolters', desc: 'Boltgun / Plague Knives', tags: 'mid_range' }
       ]
   },
-  { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap', sizes: [10, 20] },
+  { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap secondary_scoring', sizes: [10, 20] },
   { id: 'tr_pox', name: 'Poxwalkers', basePoints: 50, role: 'Battleline', unique: false, synergy: 'screen fnp horde regenerate', sizes: [10, 20] },
 
   // --- INFANTRY ---
-  { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike', sizes: [3, 6] },
+  { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike meta_hammer', sizes: [3, 6] },
   { 
       id: 'el_bl', 
       name: 'Blightlord Terminators', 
@@ -242,7 +242,7 @@ const UNIT_DATABASE = [
       basePoints: 180, 
       role: 'Vehicle', 
       unique: false, 
-      synergy: 'daemon_engine indirect mortar anti_infantry durable entropy', 
+      synergy: 'daemon_engine indirect mortar anti_infantry durable entropy meta_artillery', 
       sizes: [1],
       wargearProfiles: [
           { name: 'Entropy Cannons', desc: 'Anti-Tank', tags: 'anti_tank lascannon' },
@@ -270,7 +270,7 @@ const UNIT_DATABASE = [
   { id: 'hs_lr', name: 'Death Guard Land Raider', basePoints: 240, role: 'Vehicle', unique: false, synergy: 'transport assault_ramp lascannon durable', sizes: [1] },
 
   // --- OTHERS ---
-  { id: 'dt_rhino', name: 'Death Guard Rhino', basePoints: 75, role: 'Dedicated Transport', unique: false, synergy: 'transport firing_deck self_repair', sizes: [1] },
+  { id: 'dt_rhino', name: 'Death Guard Rhino', basePoints: 75, role: 'Dedicated Transport', unique: false, synergy: 'transport firing_deck self_repair meta_transport', sizes: [1] },
   { id: 'fort_miasmic', name: 'Miasmic Malignifier', basePoints: 65, role: 'Fortification', unique: false, synergy: 'contagion_spread cover infiltrate', sizes: [1] },
 
   // --- ALLIES ---
@@ -279,11 +279,11 @@ const UNIT_DATABASE = [
   { id: 'ally_poxbringer', name: 'Poxbringer (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'psyker buff_daemon', sizes: [1] },
   { id: 'ally_scrivener', name: 'Spoilpox Scrivener (Ally)', basePoints: 60, role: 'Ally', unique: false, synergy: 'buff_plaguebearers', sizes: [1] },
   { id: 'ally_bilepiper', name: 'Sloppity Bilepiper (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'buff_nurgling battleshock', sizes: [1] },
-  { id: 'ally_nurgling', name: 'Nurglings (Ally)', basePoints: 40, role: 'Ally', unique: false, synergy: 'infiltrate screen cheap -1_to_hit', sizes: [3, 6, 9] },
+  { id: 'ally_nurgling', name: 'Nurglings (Ally)', basePoints: 40, role: 'Ally', unique: false, synergy: 'infiltrate screen cheap -1_to_hit secondary_scoring', sizes: [3, 6, 9] },
   { id: 'ally_plaguebearers', name: 'Plaguebearers (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'sticky_obj screen deep_strike', sizes: [10] },
   { id: 'ally_beast', name: 'Beast of Nurgle (Ally)', basePoints: 70, role: 'Ally', unique: false, synergy: 'durable deep_strike regenerate', sizes: [1, 2] },
   { id: 'ally_drones', name: 'Plague Drones (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'fly fast melee', sizes: [3, 6] },
-  { id: 'ally_wardog_brig', name: 'War Dog Brigand (Ally)', basePoints: 170, role: 'Ally', unique: false, synergy: 'vehicle walker shooting melta', sizes: [1] },
+  { id: 'ally_wardog_brig', name: 'War Dog Brigand (Ally)', basePoints: 170, role: 'Ally', unique: false, synergy: 'vehicle walker shooting melta meta_ally', sizes: [1] },
   { id: 'ally_wardog_karn', name: 'War Dog Karnivore (Ally)', basePoints: 140, role: 'Ally', unique: false, synergy: 'vehicle walker melee fast', sizes: [1] },
   { id: 'ally_wardog_stalk', name: 'War Dog Stalker (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker hybrid character_sniper', sizes: [1] },
   { id: 'ally_wardog_exec', name: 'War Dog Executioner (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker long_range autocannon', sizes: [1] },
@@ -539,6 +539,15 @@ function AppContent() {
     if (oppData && oppData.priority.length > 0) {
         if (oppData.priority.some(tag => fullSynergy.includes(tag))) score *= 1.5;
     }
+    
+    // --- META BIAS ---
+    if (fullSynergy.includes('meta_staple')) score *= 1.25;
+    if (fullSynergy.includes('meta_core')) score *= 1.2;
+    if (fullSynergy.includes('meta_hammer')) score *= 1.15;
+    if (fullSynergy.includes('secondary_scoring')) score *= 1.15;
+    if (fullSynergy.includes('meta_artillery')) score *= 1.15;
+    if (fullSynergy.includes('meta_ally')) score *= 1.15;
+
     return score;
   };
 
@@ -548,10 +557,6 @@ function AppContent() {
         let newList = [];
         let currentPoints = 0;
         
-        // We create a "Virtual Pool" of units to pick from
-        // 1. All owned units (Prioritized if 'Owned' boost is on)
-        // 2. All DB units (Up to rule of 3 limits)
-
         let pool = [];
 
         // Add owned units
@@ -564,8 +569,6 @@ function AppContent() {
             const limit = (dbUnit.role === 'Battleline' || dbUnit.role === 'Dedicated Transport') ? 6 : 3;
             const uniqueLimit = dbUnit.unique ? 1 : limit;
             
-            // Only add if we don't have enough in inventory? No, add freely and let algorithm pick best.
-            // Actually, we should filter out uniques we already own to prevent duplicates in pool.
             const ownedCount = inventory.filter(u => u.unitId === dbUnit.id).length;
             const remainingSlots = Math.max(0, uniqueLimit - ownedCount);
 
@@ -619,6 +622,12 @@ function AppContent() {
         pool.sort((a,b) => {
             let scoreA = safeGetUtility(a, opponent);
             let scoreB = safeGetUtility(b, opponent);
+            
+            // --- NEW: LAND RAIDER BIAS FIX ---
+            // If it's a vehicle (and not a cheap ally/transport) and opponent isn't vehicles
+            if (a.role === 'Vehicle' && opponent !== 'vehicle') scoreA *= 0.7; // Reduce desirability
+            if (b.role === 'Vehicle' && opponent !== 'vehicle') scoreB *= 0.7;
+
             if (a.isOwned) scoreA *= 1.2; 
             if (b.isOwned) scoreB *= 1.2;
             return scoreB - scoreA;
@@ -693,6 +702,37 @@ function AppContent() {
             }
         }
 
+        const safeGetUtility = (u, opp) => {
+             let score = u.points || 0;
+             const oppData = OPPONENTS.find(o => o.id === opp);
+             const dbUnit = UNIT_DATABASE.find(db => db.id === u.unitId);
+             
+             // --- NEW LOGIC: MERGE SYNERGIES ---
+             let fullSynergy = u.synergy || '';
+             
+             // Append active wargear synergies
+             if (dbUnit && dbUnit.wargearProfiles && u.activeWargear) {
+                 u.activeWargear.forEach(profileName => {
+                     const profile = dbUnit.wargearProfiles.find(p => p.name === profileName);
+                     if (profile) fullSynergy += ' ' + profile.tags;
+                 });
+             }
+
+             if (oppData && oppData.priority.length > 0) {
+                 if (oppData.priority.some(tag => fullSynergy.includes(tag))) score *= 1.5;
+             }
+             
+             // --- META BIAS ---
+             if (fullSynergy.includes('meta_staple')) score *= 1.25;
+             if (fullSynergy.includes('meta_core')) score *= 1.2;
+             if (fullSynergy.includes('meta_hammer')) score *= 1.15;
+             if (fullSynergy.includes('secondary_scoring')) score *= 1.15;
+             if (fullSynergy.includes('meta_artillery')) score *= 1.15;
+             if (fullSynergy.includes('meta_ally')) score *= 1.15;
+
+             return score;
+        };
+
         availableInventory.sort((a, b) => {
             let scoreA = safeGetUtility(a, opponent);
             let scoreB = safeGetUtility(b, opponent);
@@ -729,9 +769,6 @@ function AppContent() {
 
         let bestDetachment = DETACHMENTS[0]; 
         let maxScore = -1;
-        // Logic remains same for detachment picking (simplified for robustness)
-        // Note: For advanced detachment picking with wargear, we'd need to pass fullSynergy down, 
-        // but current logic mainly checks unit names/roles which is safer.
         const safeCheckList = newList.map(u => ({...u, synergy: u.synergy || '', name: u.name || '', role: u.role || ''}));
 
         DETACHMENTS.forEach(det => {
@@ -769,15 +806,41 @@ function AppContent() {
     setTimeout(() => setNotification(null), 3000);
   };
 
-  const getWoundRoll = () => {
-      const modifiedT = Math.max(1, mathTough - 1); 
-      let needed = 0;
-      if (mathStr >= modifiedT * 2) needed = 2;
-      else if (mathStr > modifiedT) needed = 3;
-      else if (mathStr === modifiedT) needed = 4;
-      else if (mathStr <= modifiedT / 2) needed = 6;
-      else needed = 5;
-      return needed;
+  const generateExportText = () => {
+      const totalPoints = currentList.reduce((a, b) => a + b.points, 0);
+      const detName = suggestedDetachment ? suggestedDetachment.name : "Plague Company";
+      let text = `+++ MUSTER & MANIFEST ARMY LIST +++\n`;
+      text += `POINTS: ${totalPoints} / ${targetPoints}\n`;
+      text += `DETACHMENT: ${detName}\n\n`;
+      
+      const organized = organizeArmy(currentList);
+      organized.forEach(item => {
+          if (item.type === 'squad') {
+              text += `[${item.body.points}pts] ${item.body.name} (${item.body.modelCount})\n`;
+              item.leaders.forEach(l => {
+                  text += `  + Leader: ${l.name} [${l.points}pts]\n`;
+              });
+          } else {
+              text += `[${item.unit.points}pts] ${item.unit.name} (${item.unit.modelCount})\n`;
+          }
+      });
+      return text;
+  };
+
+  const copyToClipboard = () => {
+      const text = generateExportText();
+      navigator.clipboard.writeText(text).then(() => showNotification("Copied!")).catch(() => showNotification("Failed to copy", "error"));
+  };
+
+  const downloadTextFile = () => {
+      const text = generateExportText();
+      const element = document.createElement("a");
+      const file = new Blob([text], {type: 'text/plain'});
+      element.href = URL.createObjectURL(file);
+      element.download = "death_guard_list.txt";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
   };
 
   const filteredDatabase = UNIT_DATABASE.filter(unit => 
@@ -1016,118 +1079,6 @@ function AppContent() {
             </div>
         )}
 
-        {/* --- ACQUISITIONS (WISHLIST) TAB --- */}
-        {activeTab === 'wishlist' && (
-            <div className="space-y-6">
-                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
-                    <div className="flex flex-col gap-6">
-                        <div className="flex items-center justify-between border-b border-slate-700 pb-4">
-                            <div>
-                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
-                                <ShoppingBag className="text-yellow-500" /> Vector Expansion
-                                </h2>
-                                <p className="text-slate-400 text-sm">Generate optimal lists including units you don't own yet.</p>
-                            </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
-                                    <Target size={14}/> Target Game Size
-                                </label>
-                                <select value={targetPoints} onChange={(e) => setTargetPoints(parseInt(e.target.value))} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
-                                    <option value="500">500 pts (Combat Patrol)</option>
-                                    <option value="1000">1000 pts (Incursion)</option>
-                                    <option value="1500">1500 pts (Strike Force)</option>
-                                    <option value="2000">2000 pts (Strike Force)</option>
-                                    <option value="3000">3000 pts (Onslaught)</option>
-                                </select>
-                            </div>
-
-                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
-                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
-                                    <Skull size={14} className="text-red-400"/> Enemy Faction
-                                </label>
-                                <select value={opponent} onChange={(e) => setOpponent(e.target.value)} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
-                                    {OPPONENTS.map(op => (<option key={op.id} value={op.id}>{op.label}</option>))}
-                                </select>
-                            </div>
-                        </div>
-
-                        <button onClick={generateDreamList} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-yellow-900/20 font-bold">
-                            <Zap size={20} /> <span>Calculate Dream List</span>
-                        </button>
-                    </div>
-                </div>
-
-                {dreamList.length > 0 && (
-                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 min-h-[400px]">
-                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
-                            <div>
-                                <h3 className="text-lg font-semibold text-white">Recommended Acquisitions</h3>
-                                <div className="flex items-center gap-2 mt-1">
-                                    <span className="text-slate-400 text-sm">
-                                        Total Points: <span className="text-white font-bold">{dreamList.reduce((a, b) => a + b.points, 0)}</span>
-                                    </span>
-                                    <span className="text-slate-500 text-sm mx-2">|</span>
-                                    <span className="text-yellow-400 text-sm font-bold">
-                                        To Buy: {dreamList.filter(u => !u.isOwned).reduce((a,b) => a + b.points, 0)} pts
-                                    </span>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div className="space-y-3">
-                            {/* Owned Units */}
-                            <div className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">From Collection</div>
-                            {dreamList.filter(u => u.isOwned).map((unit, idx) => (
-                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/30 rounded border border-green-900/30 opacity-75">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
-                                        <div>
-                                            <div className="text-white font-medium">{unit.name}</div>
-                                            <div className="text-xs text-slate-400">{unit.role}</div>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <CheckCircle2 size={14} className="text-green-500"/>
-                                        <div className="font-mono text-slate-300">{unit.points} pts</div>
-                                    </div>
-                                </div>
-                            ))}
-
-                            {/* Missing Units */}
-                            {dreamList.some(u => !u.isOwned) && (
-                                <>
-                                    <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-6 mb-2">Recommended Purchases</div>
-                                    {dreamList.filter(u => !u.isOwned).map((unit, idx) => (
-                                        <div key={`buy-${idx}`} className="flex items-center justify-between p-3 bg-yellow-900/10 rounded border border-yellow-500/50">
-                                            <div className="flex items-center gap-3">
-                                                <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
-                                                <div>
-                                                    <div className="text-white font-medium">{unit.name}</div>
-                                                    <div className="text-xs text-slate-400 flex items-center gap-2">
-                                                        {unit.role}
-                                                        {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => (unit.synergy || '').includes(tag)) && (
-                                                            <span className="text-yellow-400 ml-1 flex items-center gap-0.5" title="Effective against selected enemy"><Target size={10}/> Counter</span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="flex items-center gap-2">
-                                                <ShoppingBag size={14} className="text-yellow-500"/>
-                                                <div className="font-mono text-yellow-200 font-bold">{unit.points} pts</div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </>
-                            )}
-                        </div>
-                    </div>
-                )}
-            </div>
-        )}
-
         {activeTab === 'builder' && (
             <div className="space-y-6">
               <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
@@ -1346,6 +1297,118 @@ function AppContent() {
                   </div>
                 )}
               </div>
+            </div>
+        )}
+
+        {/* --- ACQUISITIONS (WISHLIST) TAB --- */}
+        {activeTab === 'wishlist' && (
+            <div className="space-y-6">
+                <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
+                    <div className="flex flex-col gap-6">
+                        <div className="flex items-center justify-between border-b border-slate-700 pb-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-white flex items-center gap-2">
+                                <ShoppingBag className="text-yellow-500" /> Vector Expansion
+                                </h2>
+                                <p className="text-slate-400 text-sm">Generate optimal lists including units you don't own yet.</p>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
+                                    <Target size={14}/> Target Game Size
+                                </label>
+                                <select value={targetPoints} onChange={(e) => setTargetPoints(parseInt(e.target.value))} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
+                                    <option value="500">500 pts (Combat Patrol)</option>
+                                    <option value="1000">1000 pts (Incursion)</option>
+                                    <option value="1500">1500 pts (Strike Force)</option>
+                                    <option value="2000">2000 pts (Strike Force)</option>
+                                    <option value="3000">3000 pts (Onslaught)</option>
+                                </select>
+                            </div>
+
+                            <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
+                                <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
+                                    <Skull size={14} className="text-red-400"/> Enemy Faction
+                                </label>
+                                <select value={opponent} onChange={(e) => setOpponent(e.target.value)} className="w-full bg-slate-800 text-white font-bold p-2 rounded border border-slate-600 focus:outline-none">
+                                    {OPPONENTS.map(op => (<option key={op.id} value={op.id}>{op.label}</option>))}
+                                </select>
+                            </div>
+                        </div>
+
+                        <button onClick={generateDreamList} className="w-full bg-yellow-600 hover:bg-yellow-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-yellow-900/20 font-bold">
+                            <Zap size={20} /> <span>Calculate Dream List</span>
+                        </button>
+                    </div>
+                </div>
+
+                {dreamList.length > 0 && (
+                    <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 min-h-[400px]">
+                        <div className="flex justify-between items-center mb-6 pb-4 border-b border-slate-700">
+                            <div>
+                                <h3 className="text-lg font-semibold text-white">Recommended Acquisitions</h3>
+                                <div className="flex items-center gap-2 mt-1">
+                                    <span className="text-slate-400 text-sm">
+                                        Total Points: <span className="text-white font-bold">{dreamList.reduce((a, b) => a + b.points, 0)}</span>
+                                    </span>
+                                    <span className="text-slate-500 text-sm mx-2">|</span>
+                                    <span className="text-yellow-400 text-sm font-bold">
+                                        To Buy: {dreamList.filter(u => !u.isOwned).reduce((a,b) => a + b.points, 0)} pts
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* Owned Units */}
+                            <div className="text-xs font-bold text-green-400 uppercase tracking-wider mb-2">From Collection</div>
+                            {dreamList.filter(u => u.isOwned).map((unit, idx) => (
+                                <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/30 rounded border border-green-900/30 opacity-75">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
+                                        <div>
+                                            <div className="text-white font-medium">{unit.name}</div>
+                                            <div className="text-xs text-slate-400">{unit.role}</div>
+                                        </div>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <CheckCircle2 size={14} className="text-green-500"/>
+                                        <div className="font-mono text-slate-300">{unit.points} pts</div>
+                                    </div>
+                                </div>
+                            ))}
+
+                            {/* Missing Units */}
+                            {dreamList.some(u => !u.isOwned) && (
+                                <>
+                                    <div className="text-xs font-bold text-yellow-400 uppercase tracking-wider mt-6 mb-2">Recommended Purchases</div>
+                                    {dreamList.filter(u => !u.isOwned).map((unit, idx) => (
+                                        <div key={`buy-${idx}`} className="flex items-center justify-between p-3 bg-yellow-900/10 rounded border border-yellow-500/50">
+                                            <div className="flex items-center gap-3">
+                                                <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
+                                                <div>
+                                                    <div className="text-white font-medium">{unit.name}</div>
+                                                    <div className="text-xs text-slate-400 flex items-center gap-2">
+                                                        {unit.role}
+                                                        {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => (unit.synergy || '').includes(tag)) && (
+                                                            <span className="text-yellow-400 ml-1 flex items-center gap-0.5" title="Effective against selected enemy"><Target size={10}/> Counter</span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <ShoppingBag size={14} className="text-yellow-500"/>
+                                                <div className="font-mono text-yellow-200 font-bold">{unit.points} pts</div>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
             </div>
         )}
 
