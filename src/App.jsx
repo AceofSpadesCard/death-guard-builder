@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent, Edit3, FolderOpen, Disc, Wrench, ChevronDown, ChevronUp, ShoppingBag, Eye, Upload, Database, RefreshCw } from 'lucide-react';
+import { Plus, Trash2, Shield, Zap, Box, Calculator, CheckCircle2, Circle, AlertTriangle, Settings, X, Save, RotateCcw, Search, Skull, Target, FileText, Download, Copy, Share2, Users, Sword, Flag, Timer, Biohazard, Brush, Hammer, Package, Trophy, BookOpen, Percent, Edit3, FolderOpen, Disc, Wrench, ChevronDown, ChevronUp, ShoppingBag, Eye, Upload, Database, RefreshCw, Gem, Scroll } from 'lucide-react';
 
 // --- ERROR BOUNDARY ---
 class ErrorBoundary extends React.Component {
@@ -44,7 +44,7 @@ const PAINT_STATUS = {
   parade: { label: 'Parade Ready', icon: Trophy, color: 'text-yellow-500', border: 'border-yellow-500' },
 };
 
-// --- DATA: PLAGUES (SPREAD THE SICKNESS) ---
+// --- DATA: PLAGUES ---
 const SICKNESSES = [
   { id: 'skullsquirm', name: 'Skullsquirm Blight', effect: 'Worsen BS and WS by 1.' },
   { id: 'rattlejoint', name: 'Rattlejoint Ague', effect: 'Worsen Save characteristic by 1.' },
@@ -52,110 +52,127 @@ const SICKNESSES = [
   { id: 'poxes_bonus', name: 'Lord of Poxes (Unit Only)', effect: 'Worsen Save & -1 to Hit (Specific Unit Only).' }
 ];
 
-// --- DATA: DETACHMENTS & STRATAGEMS ---
+// --- DATA: SECONDARY MISSIONS ---
+const SECONDARIES = [
+  { name: 'Assassination', score: 4, type: 'Purge' },
+  { name: 'Bring It Down', score: 2, type: 'Purge' },
+  { name: 'Cleanse', score: 5, type: 'Control' },
+  { name: 'Deploy Teleport Homer', score: 5, type: 'Control' },
+  { name: 'Behind Enemy Lines', score: 5, type: 'Position' },
+  { name: 'Engage on All Fronts', score: 5, type: 'Position' },
+  { name: 'Storm Hostile Objective', score: 5, type: 'Control' },
+  { name: 'Area Denial', score: 5, type: 'Control' },
+];
+
+// --- DATA: DETACHMENTS (THE VERIFIED 6) ---
 const DETACHMENTS = [
   { 
-    id: 'plague_company', 
-    name: 'Plague Company (Index)', 
-    desc: 'The standard vector. Spreads Contagion to objectives. Good for sticky objective play.', 
+    id: 'virulent_vectorium', 
+    name: 'Virulent Vectorium', 
+    desc: 'The classic plague vector. Focuses on spreading Contagion and controlling objectives with "Sticky Objectives".', 
     criteria: (units) => true, 
     score: 0,
     stratagems: [
-      { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits. Critical for punching through armor.' },
-      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1]. If in range of infected objective, gain [Sustained Hits 2].' },
-      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit). Essential defensive tool.' },
-      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover]. Spotter unit must see target.' },
-    ]
-  },
-  { 
-    id: 'inexorable', 
-    name: 'The Inexorable', 
-    desc: 'Armor penetration mitigation and vehicle movement. Best for Rhino/Land Raider heavy lists.', 
-    criteria: (units) => units.filter(u => u.role === 'Dedicated Transport' || u.name.includes('Land Raider') || u.name.includes('Predator')).length >= 2, 
-    score: 0,
-    stratagems: [
       { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits.' },
-      { name: 'Leech-Spore Casket', cp: 1, phase: 'Shooting', desc: 'When a vehicle destroys a model, heal D3 wounds on a nearby unit.' },
+      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1] (or 2 near infected obj).' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth.' },
+      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover].' },
+    ],
+    enhancements: [
+      { name: 'Deadly Pathogen', points: 15, desc: '+1S and +1A to melee weapons.' },
+      { name: 'The Droning', points: 10, desc: 'Enemy units within Contagion Range cannot Advance/Fall Back.' },
+      { name: 'Living Plague', points: 20, desc: 'Aura 3": Enemies take D3 mortals at end of turn.' },
+      { name: 'Shamblerot', points: 25, desc: 'Enemy units in Engagement Range take mortals.' }
+    ]
+  },
+  { 
+    id: 'mortarions_hammer', 
+    name: 'Mortarion\'s Hammer', 
+    desc: 'The Iron Tide. Vehicle and Monster focus. Great for heavy mechanized lists (Crawlers, Haulers, Land Raiders).', 
+    criteria: (units) => units.filter(u => u.role === 'Vehicle' || u.role === 'Dedicated Transport' || u.synergy.includes('monster')).length >= 3, 
+    score: 0,
+    stratagems: [
+      { name: 'Tank Shock', cp: 1, phase: 'Charge', desc: 'Roll dice equal to Toughness. 5+ deals mortal wounds.' },
+      { name: 'Ferric Blight', cp: 1, phase: 'Shooting', desc: 'Improve AP by 1 for weapons with Lethal Hits.' },
+      { name: 'Disgusting Resilience', cp: 2, phase: 'Opponent Shooting', desc: '-1 Damage to a Vehicle.' },
       { name: 'Unholy Advance', cp: 1, phase: 'Movement', desc: 'Vehicles can shoot as if they remained stationary after Falling Back.' },
-      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
+    ],
+    enhancements: [
+       { name: 'Atomizer', points: 20, desc: 'Ranged weapons gain [Anti-Infantry 2+].' },
+       { name: 'Hull-Rot', points: 15, desc: 'Vehicle heals D3 wounds in Command Phase.' },
+       { name: 'Ironclot Furnace', points: 25, desc: 'Vehicle gains 4+ Invulnerable Save.' }
     ]
   },
   { 
-    id: 'mortarions_anvil', 
-    name: 'Mortarion\'s Anvil', 
-    desc: 'Defensive melee. Heroic intervention and bodyguard bonuses. Best for Terminator bricks/Characters.', 
-    criteria: (units) => units.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord') || u.role === 'Character').length >= 3, 
+    id: 'champions_of_contagion', 
+    name: 'Champions of Contagion', 
+    desc: 'Herohammer focus. Buffs Characters and their attached units. Best for lists with many Lords and Virions.', 
+    criteria: (units) => units.filter(u => u.role === 'Character' || u.role === 'Epic Hero').length >= 4, 
     score: 0,
     stratagems: [
-      { name: 'Gloaming Bloat', cp: 1, phase: 'Fight', desc: 'Shut down enemy re-rolls to hit and wound against this unit.' },
-      { name: 'Relentless', cp: 2, phase: 'Fight', desc: 'Character fights on death.' },
-      { name: 'Face of the Mantle', cp: 1, phase: 'Charge', desc: 'Heroic Intervention costs 0CP and unit hits on 2+.' },
-      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
+      { name: 'Epic Challenge', cp: 1, phase: 'Fight', desc: 'Character gains [Precision].' },
+      { name: 'Gifts of Decay', cp: 1, phase: 'Command', desc: 'Heal D3 wounds on a Character.' },
+      { name: 'Hyper-Toxic', cp: 1, phase: 'Fight', desc: 'Character unit scores Critical Hits on 5+.' },
+      { name: 'Signal Pox', cp: 1, phase: 'Shooting', desc: 'Select enemy unit. All friendly Characters re-roll hits against it.' },
+    ],
+    enhancements: [
+        { name: 'Bilemaw Blight', points: 10, desc: 'Add 12" to range of Psychic/Ranged attacks.' },
+        { name: 'Suppurating Plate', points: 25, desc: '2+ Save and 4+ FNP.' },
+        { name: 'Revolting Stench-vats', points: 15, desc: 'Enemy units within 6" cannot Fight First.' }
     ]
   },
   { 
-    id: 'ferrymen', 
-    name: 'The Ferrymen', 
-    desc: 'Drone and Poxwalker support. Enhances aura ranges and morale debuffs.', 
-    criteria: (units) => units.filter(u => u.name.includes('Bloat-drone') || u.name.includes('Poxwalker') || u.name.includes('Blightlord')).length >= 3, 
-    score: 0,
-    stratagems: [
-      { name: 'The Droning', cp: 1, phase: 'Movement', desc: 'Halve Move characteristic of enemy units within Contagion Range.' },
-      { name: 'On Droning Wings', cp: 1, phase: 'Command', desc: 'Add 6" to aura abilities of one Character.' },
-      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
-      { name: 'Vermid Whispers', cp: 1, phase: 'Shooting', desc: '+1 to Hit for Poxwalkers or Blightlords.' },
-    ]
-  },
-  { 
-    id: 'wretched', 
-    name: 'The Wretched', 
-    desc: 'Psyker heavy. Mortal wound output maximized. Requires Psykers.', 
-    criteria: (units) => units.filter(u => (u.synergy || '').includes('psyker') || u.name.includes('Malignant')).length >= 2, 
+    id: 'tallyband_summoners', 
+    name: 'Tallyband Summoners', 
+    desc: 'The Sorcerous Conclave. Psyker and Daemon focus. Maximizes Mortal Wounds and summoning synergies.', 
+    criteria: (units) => units.filter(u => (u.synergy || '').includes('psyker') || u.name.includes('Malignant') || u.role === 'Ally').length >= 3, 
     score: 0,
     stratagems: [
       { name: 'Eater of Magic', cp: 1, phase: 'Psychic', desc: 'Psychic attacks gain [Devastating Wounds].' },
-      { name: 'Sevenfold Blessings', cp: 1, phase: 'Command', desc: 'Psyker can re-roll psychic test. If 7+ rolled, refund CP.' },
+      { name: 'Sevenfold Blessings', cp: 1, phase: 'Command', desc: 'Re-roll psychic test. 7+ refunds CP.' },
       { name: 'Putrid Explosion', cp: 1, phase: 'Fight', desc: 'If Psyker dies, they explode dealing D3 mortals to everyone within 6".' },
-      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover].' },
+      { name: 'Warp Reality', cp: 1, phase: 'Movement', desc: 'Teleport a Psyker unit anywhere outside 9" of enemies.' },
+    ],
+    enhancements: [
+        { name: 'Daemon\'s Toll', points: 20, desc: 'Psychic attacks +1 Damage.' },
+        { name: 'The Eater', points: 25, desc: 'Psyker gains full re-rolls to hit and wound.' },
+        { name: 'Grimoire of Decay', points: 15, desc: 'Unit gains [FNP 5+] against Psychic Attacks.' }
     ]
   },
   { 
-    id: 'poxmongers', 
-    name: 'Poxmongers', 
-    desc: 'Daemon Engine focus. Improves invulnerable saves for Engines. Great for Haulers and Crawlers.', 
-    criteria: (units) => units.filter(u => (u.synergy || '').includes('daemon_engine') || u.role === 'Vehicle' || u.name.includes('War Dog')).length >= 3, 
-    score: 0,
-    stratagems: [
-      { name: 'Ironclot Furnace', cp: 1, phase: 'Command', desc: 'Daemon Engines gain 4+ Invulnerable Save.' },
-      { name: 'Bilious Blood-rush', cp: 1, phase: 'Shooting', desc: 'Daemon Engines can shoot after Falling Back.' },
-      { name: 'Boilblight', cp: 1, phase: 'Shooting', desc: 'Weapons gain [Heavy] and [Ignores Cover].' },
-      { name: 'Ferric Blight', cp: 1, phase: 'Shooting/Fight', desc: 'Improve AP by 1 for weapons with Lethal Hits.' },
-    ]
-  },
-  { 
-    id: 'chosen_sons', 
-    name: 'The Chosen Sons', 
-    desc: 'Flamer and Plague Belcher specialists. Increases strength of torrent weapons.', 
-    criteria: (units) => units.filter(u => (u.synergy || '').includes('torrent') || (u.synergy || '').includes('flamer') || u.name.includes('Deathshroud')).length >= 3, 
-    score: 0,
-    stratagems: [
-      { name: 'Plague Brewer', cp: 1, phase: 'Shooting', desc: 'Add 1 to Damage of Torrent weapons (Flamers/Belchers).' },
-      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth (-1 to be hit).' },
-      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
-      { name: 'Comfort in Coruption', cp: 2, phase: 'Charge', desc: '-2 to Charge rolls made against this unit.' },
-    ]
-  },
-  { 
-    id: 'terminus_est', 
-    name: 'Terminus Est Assault', 
-    desc: 'Infantry & Poxwalker horde. Grants Deep Strike to Bubotic Astartes. No Vehicles allowed.', 
+    id: 'shamblerot_vectorium', 
+    name: 'Shamblerot Vectorium', 
+    desc: 'The Zombie Tide. Infantry & Poxwalker focus. Grants buffs to the horde. Ideal for Terminus Est style lists.', 
     criteria: (units) => units.filter(u => u.role === 'Battleline' || u.name.includes('Poxwalker') || u.name.includes('Terminator')).length >= 4 && units.filter(u => u.role === 'Vehicle' && !u.name.includes('War Dog')).length === 0, 
     score: 0,
     stratagems: [
-      { name: 'Rotting Tide', cp: 1, phase: 'Command', desc: 'Return D3+3 destroyed Poxwalkers to a unit.' },
-      { name: 'Outbreak Assault', cp: 1, phase: 'Movement', desc: 'Unit arriving from Deep Strike adds 1 to Charge rolls.' },
-      { name: 'Mutant Strain', cp: 1, phase: 'Fight', desc: 'Poxwalkers deal mortals on 6s to hit, but take mortals on 1s.' },
-      { name: 'Sanguous Flux', cp: 1, phase: 'Fight', desc: 'Weapons gain [Sustained Hits 1].' },
+      { name: 'Rotting Tide', cp: 1, phase: 'Command', desc: 'Return D3+3 Poxwalkers.' },
+      { name: 'Outbreak Assault', cp: 1, phase: 'Movement', desc: 'Deep Strike unit +1 to Charge.' },
+      { name: 'Mutant Strain', cp: 1, phase: 'Fight', desc: 'Poxwalkers deal mortals on 6s, take mortals on 1s.' },
+      { name: 'Endless Swarm', cp: 2, phase: 'Command', desc: 'Place destroyed Poxwalker unit into Strategic Reserves.' },
+    ],
+    enhancements: [
+        { name: 'Canker', points: 10, desc: 'Leader grants [Lethal Hits] to attached Poxwalkers.' },
+        { name: 'Filth Encrusted', points: 15, desc: 'Unit gains +1 to Hit in melee.' },
+        { name: 'Horn of Nurgle', points: 20, desc: 'Add 2" to Move characteristic of Poxwalkers.' }
+    ]
+  },
+  { 
+    id: 'death_lords_chosen', 
+    name: 'Death Lord\'s Chosen', 
+    desc: 'The Elite Guard. Terminator and Bladeguard focus. Defensive buffs and durability.', 
+    criteria: (units) => units.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord')).length >= 2, 
+    score: 0,
+    stratagems: [
+      { name: 'Grim Reapers', cp: 1, phase: 'Fight', desc: 'Re-roll Hit rolls of 1. If unit has 5+ models, re-roll all Hits.' },
+      { name: 'Cloud of Flies', cp: 1, phase: 'Opponent Shooting', desc: 'Target unit gains Stealth.' },
+      { name: 'Rapid Ingress', cp: 1, phase: 'Movement', desc: 'Deep Strike in opponent\'s turn.' },
+      { name: 'Break Their Lines', cp: 1, phase: 'Charge', desc: '+1 to Charge rolls.' },
+    ],
+    enhancements: [
+        { name: 'Reaper of Glorious Entropy', points: 20, desc: 'Melee weapons get +1D and [Devastating Wounds].' },
+        { name: 'Typhus\'s Favor', points: 15, desc: 'Unit gets OC+1 per model.' },
+        { name: 'Vat-Bonded', points: 10, desc: 'Unit reduces incoming AP by 1.' }
     ]
   },
 ];
@@ -169,136 +186,129 @@ const OPPONENTS = [
   { id: 'melee', name: 'Melee Rush (World Eaters)', label: 'Melee Rush', priority: ['fights_first', 'fight_on_death', 'foul_blightspawn', 'flamer', 'screen'] },
 ];
 
-// --- DEATH GUARD DATABASE (META-TUNED 10th ED + STATS + WEAPONS) ---
-const DEFAULT_UNIT_DATABASE = [
+// --- DEATH GUARD DATABASE ---
+const UNIT_DATABASE = [
   // --- EPIC HEROES ---
-  { 
-    id: 'epic_morty', name: 'Mortarion', basePoints: 325, role: 'Epic Hero', unique: true, synergy: 'lord_of_war fly psyker anti_tank horde_clear monster meta_centerpiece', sizes: [1], 
-    stats: {m:'10"', t:12, sv:'2+', w:16, ld:'5+', oc:6},
-    weapons: [
-        {name: "Silence (Strike)", r:"Melee", a:5, bs_ws:"2+", s:16, ap:-4, d:4, keys: ["Lethal Hits"]},
-        {name: "Silence (Sweep)", r:"Melee", a:15, bs_ws:"2+", s:8, ap:-2, d:1, keys: ["Lethal Hits"]},
-        {name: "The Lantern", r:"18\"", a:2, bs_ws:"2+", s:9, ap:-3, d:3, keys: ["Pistol", "Lethal Hits"]},
-        {name: "Rotwind", r:"12\"", a: "D6+3", bs_ws:"2+", s:7, ap:-2, d:1, keys: ["Psychic", "Blast", "Lethal Hits"]}
-    ]
-  },
-  { 
-    id: 'epic_typhus', name: 'Typhus', basePoints: 80, role: 'Epic Hero', unique: true, synergy: 'psyker mortal horde_clear buff_poxwalkers deep_strike meta_staple', sizes: [1], leads: ['el_ds', 'el_bl', 'tr_pox'], 
-    stats: {m:'5"', t:6, sv:'2+', w:6, ld:'6+', oc:2},
-    weapons: [
-        {name: "Master-crafted Manreaper", r:"Melee", a:4, bs_ws:"2+", s:9, ap:-3, d:3, keys: ["Lethal Hits", "Sustained Hits 1"]},
-        {name: "The Destroyer Hive", r:"18\"", a: "D6", bs_ws:"N/A", s:5, ap:-1, d:1, keys: ["Torrent", "Ignores Cover"]}
-    ]
-  },
+  { id: 'epic_morty', name: 'Mortarion', basePoints: 325, role: 'Epic Hero', unique: true, synergy: 'lord_of_war fly psyker anti_tank horde_clear monster', sizes: [1], stats: {m:'10"', t:12, sv:'2+', w:16, ld:'5+', oc:6} },
+  { id: 'epic_typhus', name: 'Typhus', basePoints: 80, role: 'Epic Hero', unique: true, synergy: 'psyker mortal horde_clear buff_poxwalkers deep_strike', sizes: [1], leads: ['el_ds', 'el_bl', 'tr_pox'], stats: {m:'5"', t:6, sv:'2+', w:6, ld:'6+', oc:2} },
   
   // --- CHARACTERS ---
-  { 
-    id: 'hq_lord_poxes', name: 'Lord of Poxes', basePoints: 75, role: 'Character', unique: false, synergy: 'stealth contagion_buff anti_infantry lone_operative meta_new', sizes: [1], leads: ['tr_pm'], 
-    stats: {m:'6"', t:5, sv:'3+', w:5, ld:'6+', oc:1},
-    weapons: [
-        {name: "Great Plague Blade", r:"Melee", a:6, bs_ws:"2+", s:5, ap:-2, d:2, keys: ["Lethal Hits", "Anti-Infantry 4+"]},
-        {name: "Plasma Pistol", r:"12\"", a:1, bs_ws:"2+", s:8, ap:-3, d:2, keys: ["Pistol", "Hazardous"]}
-    ]
-  },
-  { id: 'hq_lord', name: 'Death Guard Chaos Lord', basePoints: 65, role: 'Character', unique: false, synergy: 'reroll_1s aura cheap_hq', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:5, ld:'6+', oc:1}, weapons: [{name: "Plague Fist", r:"Melee", a:3, bs_ws:"3+", s:8, ap:-2, d:2, keys: ["Lethal Hits"]}, {name: "Plasma Pistol", r:"12\"", a:1, bs_ws:"2+", s:8, ap:-3, d:2, keys: ["Pistol", "Hazardous"]}] },
-  { id: 'hq_lord_term', name: 'DG Chaos Lord in Terminator Armour', basePoints: 85, role: 'Character', unique: false, synergy: 'terminator_armor mortal_aura deep_strike', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1}, weapons: [{name: "Twin Lightning Claws", r:"Melee", a:5, bs_ws:"2+", s:5, ap:-2, d:1, keys: ["Twin-Linked", "Lethal Hits"]}] },
-  { id: 'hq_sorc', name: 'DG Sorcerer in Power Armour', basePoints: 60, role: 'Character', unique: false, synergy: 'psyker -1_to_hit debuff', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Force Weapon", r:"Melee", a:3, bs_ws:"3+", s:6, ap:-1, d: "D3", keys: ["Psychic", "Lethal Hits"]}, {name: "Plague Bolt Pistol", r:"12\"", a:1, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Lethal Hits", "Pistol"]}] },
-  { id: 'hq_sorc_term', name: 'DG Sorcerer in Terminator Armour', basePoints: 70, role: 'Character', unique: false, synergy: 'psyker terminator_armor -1_dmg', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:5, ld:'6+', oc:1}, weapons: [{name: "Force Weapon", r:"Melee", a:3, bs_ws:"3+", s:6, ap:-1, d: "D3", keys: ["Psychic", "Lethal Hits"]}, {name: "Plague Combi-bolter", r:"24\"", a:2, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Rapid Fire 2", "Lethal Hits"]}] },
-  { id: 'hq_lov', name: 'Lord of Virulence', basePoints: 80, role: 'Character', unique: false, synergy: 'buff_blast anti_infantry terminator_armor meta_staple', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1}, weapons: [{name: "Twin Plague Spewer", r:"12\"", a: "2D6", bs_ws:"N/A", s:5, ap:-1, d:1, keys: ["Torrent", "Anti-Infantry 2+"]}, {name: "Heavy Plague Fist", r:"Melee", a:4, bs_ws:"3+", s:8, ap:-2, d:2, keys: ["Lethal Hits"]}] },
-  { id: 'hq_loc', name: 'Lord of Contagion', basePoints: 80, role: 'Character', unique: false, synergy: 'melee_beatstick terminator_armor reroll_hits', sizes: [1], leads: ['el_ds', 'el_bl'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1}, weapons: [{name: "Plaguereaper", r:"Melee", a:5, bs_ws:"2+", s:8, ap:-3, d:3, keys: ["Lethal Hits"]}] },
-  { id: 'hq_dp', name: 'Death Guard Daemon Prince', basePoints: 160, role: 'Character', unique: false, synergy: 'monster melee invuln fnp_aura', sizes: [1], stats: {m:'7"', t:10, sv:'2+', w:10, ld:'6+', oc:3}, weapons: [{name: "Hellforged Weapons (Strike)", r:"Melee", a:6, bs_ws:"2+", s:8, ap:-2, d:3, keys: ["Lethal Hits"]}, {name: "Plague Spewer", r:"12\"", a:"D6", bs_ws:"N/A", s:5, ap:-1, d:1, keys: ["Torrent"]}] },
-  { id: 'hq_dp_wings', name: 'DG Daemon Prince with Wings', basePoints: 195, role: 'Character', unique: false, synergy: 'monster melee fly fast', sizes: [1], stats: {m:'11"', t:9, sv:'2+', w:10, ld:'6+', oc:3}, weapons: [{name: "Hellforged Weapons (Strike)", r:"Melee", a:6, bs_ws:"2+", s:8, ap:-2, d:3, keys: ["Lethal Hits"]}] },
-  { id: 'hq_malignant', name: 'Malignant Plaguecaster', basePoints: 65, role: 'Character', unique: false, synergy: 'psyker mortal -1_to_wound', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Plague Wind", r:"24\"", a:"D6", bs_ws:"3+", s:5, ap:-1, d:1, keys: ["Psychic", "Lethal Hits"]}, {name: "Corrupted Staff", r:"Melee", a:3, bs_ws:"3+", s:6, ap:-1, d: "D3", keys: ["Psychic", "Lethal Hits"]}] },
+  { id: 'hq_lord_poxes', name: 'Lord of Poxes', basePoints: 75, role: 'Character', unique: false, synergy: 'stealth contagion_buff anti_infantry lone_operative', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:5, ld:'6+', oc:1} },
+  { id: 'hq_lord', name: 'Death Guard Chaos Lord', basePoints: 65, role: 'Character', unique: false, synergy: 'reroll_1s aura cheap_hq', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:5, ld:'6+', oc:1} },
+  { id: 'hq_lord_term', name: 'DG Chaos Lord in Terminator Armour', basePoints: 85, role: 'Character', unique: false, synergy: 'terminator_armor mortal_aura deep_strike', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1} },
+  { id: 'hq_sorc', name: 'DG Sorcerer in Power Armour', basePoints: 60, role: 'Character', unique: false, synergy: 'psyker -1_to_hit debuff', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
+  { id: 'hq_sorc_term', name: 'DG Sorcerer in Terminator Armour', basePoints: 70, role: 'Character', unique: false, synergy: 'psyker terminator_armor -1_dmg', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:5, ld:'6+', oc:1} },
+  { id: 'hq_lov', name: 'Lord of Virulence', basePoints: 80, role: 'Character', unique: false, synergy: 'buff_blast anti_infantry terminator_armor', sizes: [1], leads: ['el_bl', 'el_ds'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1} },
+  { id: 'hq_loc', name: 'Lord of Contagion', basePoints: 80, role: 'Character', unique: false, synergy: 'melee_beatstick terminator_armor reroll_hits', sizes: [1], leads: ['el_ds', 'el_bl'], stats: {m:'4"', t:6, sv:'2+', w:6, ld:'6+', oc:1} },
+  { id: 'hq_dp', name: 'Death Guard Daemon Prince', basePoints: 160, role: 'Character', unique: false, synergy: 'monster melee invuln fnp_aura', sizes: [1], stats: {m:'7"', t:10, sv:'2+', w:10, ld:'6+', oc:3} },
+  { id: 'hq_dp_wings', name: 'DG Daemon Prince with Wings', basePoints: 195, role: 'Character', unique: false, synergy: 'monster melee fly fast', sizes: [1], stats: {m:'11"', t:9, sv:'2+', w:10, ld:'6+', oc:3} },
+  { id: 'hq_malignant', name: 'Malignant Plaguecaster', basePoints: 65, role: 'Character', unique: false, synergy: 'psyker mortal -1_to_wound', sizes: [1], leads: ['tr_pm'], stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
   
   // --- VIRION ---
-  { id: 'vir_foul', name: 'Foul Blightspawn', basePoints: 50, role: 'Character', unique: false, synergy: 'fights_first anti_charge torrent flamer meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Plague Sprayer", r:"12\"", a:"D6", bs_ws:"N/A", s:7, ap:-2, d:2, keys: ["Torrent", "Anti-Infantry 2+"]}] },
-  { id: 'vir_bio', name: 'Biologus Putrifier', basePoints: 50, role: 'Character', unique: false, synergy: 'lethal_hits_buff crit_5+ grenade meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Hyper-blight Grenades", r:"12\"", a:"D6", bs_ws:"3+", s:5, ap:-1, d:2, keys: ["Lethal Hits", "Blast"]}, {name: "Injector Pistol", r:"3\"", a:1, bs_ws:"3+", s:4, ap:-1, d:3, keys: ["Pistol", "Anti-Infantry 2+", "Lethal Hits"]}] },
-  { id: 'vir_tally', name: 'Tallyman', basePoints: 45, role: 'Character', unique: false, synergy: 'cp_generation +1_to_hit meta_staple', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Infected Plasma Pistol", r:"12\"", a:1, bs_ws:"3+", s:8, ap:-3, d:2, keys: ["Pistol", "Lethal Hits", "Hazardous"]}] },
-  { id: 'vir_surgeon', name: 'Plague Surgeon', basePoints: 65, role: 'Character', unique: false, synergy: 'heal resurrect fnp_buff', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Balesword", r:"Melee", a:4, bs_ws:"3+", s:5, ap:-2, d:2, keys: ["Lethal Hits"]}] },
-  { id: 'vir_icon', name: 'Noxious Blightbringer', basePoints: 50, role: 'Character', unique: false, synergy: 'move_buff battleshock', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1}, weapons: [{name: "Plasma Pistol", r:"12\"", a:1, bs_ws:"3+", s:8, ap:-3, d:2, keys: ["Pistol", "Hazardous"]}] },
+  { id: 'vir_foul', name: 'Foul Blightspawn', basePoints: 50, role: 'Character', unique: false, synergy: 'fights_first anti_charge torrent flamer', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
+  { id: 'vir_bio', name: 'Biologus Putrifier', basePoints: 50, role: 'Character', unique: false, synergy: 'lethal_hits_buff crit_5+ grenade', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
+  { id: 'vir_tally', name: 'Tallyman', basePoints: 45, role: 'Character', unique: false, synergy: 'cp_generation +1_to_hit', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
+  { id: 'vir_surgeon', name: 'Plague Surgeon', basePoints: 65, role: 'Character', unique: false, synergy: 'heal resurrect fnp_buff', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
+  { id: 'vir_icon', name: 'Noxious Blightbringer', basePoints: 50, role: 'Character', unique: false, synergy: 'move_buff battleshock', sizes: [1], leads: ['tr_pm'], isVirion: true, stats: {m:'6"', t:5, sv:'3+', w:4, ld:'6+', oc:1} },
 
   // --- BATTLELINE ---
   { 
-      id: 'tr_pm', name: 'Plague Marines', basePoints: 90, role: 'Battleline', unique: false, synergy: 'sticky_obj special_weapons lethal_hits meta_core', sizes: [5, 10], stats: {m:'5"', t:5, sv:'3+', w:2, ld:'6+', oc:2},
+      id: 'tr_pm', 
+      name: 'Plague Marines', 
+      basePoints: 90, 
+      role: 'Battleline', 
+      unique: false, 
+      synergy: 'sticky_obj special_weapons lethal_hits', 
+      sizes: [5, 10],
+      stats: {m:'5"', t:5, sv:'3+', w:2, ld:'6+', oc:2},
       wargearProfiles: [
           { name: 'Heavy Melee', desc: 'Heavy Plague Weapons / Bubotic', tags: 'melee' },
           { name: 'Special Guns', desc: 'Plasma / Melta / Blight Launchers', tags: 'anti_elite anti_tank mid_range' },
           { name: 'Torrent/Spewers', desc: 'Plague Spewers / Belchers', tags: 'torrent overwatch' },
           { name: 'Standard Bolters', desc: 'Boltgun / Plague Knives', tags: 'mid_range' }
-      ],
-      weapons: [
-          {name: "Heavy Plague Weapon", r:"Melee", a:3, bs_ws:"4+", s:8, ap:-2, d:2, keys: ["Lethal Hits"]},
-          {name: "Bubotic Weapons", r:"Melee", a:4, bs_ws:"3+", s:5, ap:-2, d:1, keys: ["Lethal Hits"]},
-          {name: "Plague Boltgun", r:"24\"", a:2, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Lethal Hits"]},
-          {name: "Plague Spewer", r:"12\"", a:"D6", bs_ws:"N/A", s:5, ap:-1, d:1, keys: ["Torrent", "Anti-Infantry 2+"]},
-          {name: "Blight Launcher", r:"24\"", a:2, bs_ws:"3+", s:6, ap:-1, d:2, keys: ["Lethal Hits"]},
-          {name: "Meltagun", r:"12\"", a:1, bs_ws:"3+", s:9, ap:-4, d:"D6", keys: ["Melta 2"]}
       ]
   },
-  { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap secondary_scoring', sizes: [10, 20], stats: {m:'6"', t:3, sv:'6+', w:1, ld:'7+', oc:1}, weapons: [{name: "Cultist Firearm", r:"24\"", a:1, bs_ws:"4+", s:3, ap:0, d:1, keys: []}, {name: "Brutal Assault Weapon", r:"Melee", a:2, bs_ws:"4+", s:3, ap:0, d:1, keys: []}] },
-  { id: 'tr_pox', name: 'Poxwalkers', basePoints: 50, role: 'Battleline', unique: false, synergy: 'screen fnp horde regenerate', sizes: [10, 20], stats: {m:'4"', t:4, sv:'7+', w:1, ld:'8+', oc:1}, weapons: [{name: "Improvised Weapon", r:"Melee", a:2, bs_ws:"4+", s:3, ap:0, d:1, keys: ["Lethal Hits"]}] },
+  { id: 'tr_cult', name: 'Death Guard Cultists', basePoints: 50, role: 'Battleline', unique: false, synergy: 'scout screen cheap', sizes: [10, 20], stats: {m:'6"', t:3, sv:'6+', w:1, ld:'7+', oc:1} },
+  { id: 'tr_pox', name: 'Poxwalkers', basePoints: 50, role: 'Battleline', unique: false, synergy: 'screen fnp horde regenerate', sizes: [10, 20], stats: {m:'4"', t:4, sv:'7+', w:1, ld:'8+', oc:1} },
 
   // --- INFANTRY ---
-  { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike meta_hammer', sizes: [3, 6], stats: {m:'4"', t:6, sv:'2+', w:3, ld:'6+', oc:1}, weapons: [{name: "Plaguespurt Gauntlet", r:"12\"", a:"D6", bs_ws:"N/A", s:3, ap:0, d:1, keys: ["Torrent", "Anti-Infantry 4+"]}, {name: "Manreaper (Strike)", r:"Melee", a:4, bs_ws:"2+", s:8, ap:-2, d:2, keys: ["Lethal Hits"]}, {name: "Manreaper (Sweep)", r:"Melee", a:6, bs_ws:"2+", s:5, ap:0, d:1, keys: ["Lethal Hits"]}] },
+  { id: 'el_ds', name: 'Deathshroud Terminators', basePoints: 120, role: 'Infantry', unique: false, synergy: 'flamer torrent melee bodyguard terminator_armor deep_strike', sizes: [3, 6], stats: {m:'4"', t:6, sv:'2+', w:3, ld:'6+', oc:1} },
   { 
-      id: 'el_bl', name: 'Blightlord Terminators', basePoints: 165, role: 'Infantry', unique: false, synergy: 'durable deep_strike terminator_armor lethal_hits', sizes: [5, 10], stats: {m:'4"', t:6, sv:'2+', w:3, ld:'6+', oc:1},
-      wargearProfiles: [ { name: 'Combi-Bolters', desc: 'Standard', tags: 'mid_range' }, { name: 'Anti-Infantry', desc: 'Combi-Weapons / Reaper', tags: 'anti_infantry' }, { name: 'Anti-Tank', desc: 'Melta / Missile', tags: 'anti_tank melta' } ],
-      weapons: [
-          {name: "Combi-Bolter", r:"24\"", a:2, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Rapid Fire 2", "Lethal Hits"]},
-          {name: "Reaper Autocannon", r:"36\"", a:4, bs_ws:"3+", s:7, ap:-1, d:1, keys: ["Sustained Hits 1", "Devastating Wounds"]},
-          {name: "Balesword", r:"Melee", a:4, bs_ws:"3+", s:5, ap:-2, d:2, keys: ["Lethal Hits"]}
+      id: 'el_bl', 
+      name: 'Blightlord Terminators', 
+      basePoints: 165, 
+      role: 'Infantry', 
+      unique: false, 
+      synergy: 'durable deep_strike terminator_armor lethal_hits', 
+      sizes: [5, 10],
+      stats: {m:'4"', t:6, sv:'2+', w:3, ld:'6+', oc:1},
+      wargearProfiles: [
+          { name: 'Combi-Bolters', desc: 'Standard', tags: 'mid_range' },
+          { name: 'Anti-Infantry', desc: 'Combi-Weapons / Reaper', tags: 'anti_infantry' },
+          { name: 'Anti-Tank', desc: 'Melta / Missile', tags: 'anti_tank melta' }
       ]
   },
-  { id: 'el_spawn', name: 'Death Guard Chaos Spawn', basePoints: 70, role: 'Infantry', unique: false, synergy: 'fast regenerate cheap melee', sizes: [2], stats: {m:'8"', t:5, sv:'4+', w:4, ld:'7+', oc:1}, weapons: [{name: "Mutated Limbs", r:"Melee", a:"D6+2", bs_ws:"4+", s:5, ap:-1, d:2, keys: ["Lethal Hits"]}] },
+  { id: 'el_spawn', name: 'Death Guard Chaos Spawn', basePoints: 70, role: 'Infantry', unique: false, synergy: 'fast regenerate cheap melee', sizes: [2], stats: {m:'8"', t:5, sv:'4+', w:4, ld:'7+', oc:1} },
 
   // --- VEHICLES ---
-  { id: 'fa_drone_fleshmower', name: 'Foetid Bloat-drone (Fleshmower)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly melee anti_infantry', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3}, weapons: [{name: "Fleshmower", r:"Melee", a:10, bs_ws:"3+", s:7, ap:-1, d:2, keys: ["Lethal Hits"]}] },
-  { id: 'fa_drone_spitter', name: 'Foetid Bloat-drone (Plaguespitters)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly torrent flamer overwatch', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3}, weapons: [{name: "2x Plaguespitter", r:"12\"", a:"2D6", bs_ws:"N/A", s:6, ap:-1, d:1, keys: ["Torrent", "Anti-Infantry 2+"]}] },
-  { id: 'fa_drone_launcher', name: 'Foetid Bloat-drone (Heavy Blight Launcher)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly shoot', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3}, weapons: [{name: "Heavy Blight Launcher", r:"36\"", a:6, bs_ws:"3+", s:8, ap:-2, d:2, keys: ["Lethal Hits"]}] },
-  { id: 'fa_mbh', name: 'Myphitic Blight-hauler', basePoints: 100, role: 'Vehicle', unique: false, synergy: 'daemon_engine anti_tank melta fast', sizes: [1, 2, 3], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3}, weapons: [{name: "Multi-melta", r:"18\"", a:2, bs_ws:"3+", s:9, ap:-4, d:"D6", keys: ["Melta 2"]}, {name: "Missile Launcher (Krak)", r:"48\"", a:1, bs_ws:"3+", s:9, ap:-2, d:"D6", keys: []}, {name: "Bile Spurt", r:"12\"", a:"D3", bs_ws:"3+", s:5, ap:-1, d:1, keys: ["Anti-Infantry 2+"]}] },
+  { id: 'fa_drone_fleshmower', name: 'Foetid Bloat-drone (Fleshmower)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly melee anti_infantry', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3} },
+  { id: 'fa_drone_spitter', name: 'Foetid Bloat-drone (Plaguespitters)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly torrent flamer overwatch', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3} },
+  { id: 'fa_drone_launcher', name: 'Foetid Bloat-drone (Heavy Blight Launcher)', basePoints: 90, role: 'Vehicle', unique: false, synergy: 'daemon_engine fly shoot', sizes: [1], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3} },
+  { id: 'fa_mbh', name: 'Myphitic Blight-hauler', basePoints: 100, role: 'Vehicle', unique: false, synergy: 'daemon_engine anti_tank melta fast', sizes: [1, 2, 3], stats: {m:'10"', t:9, sv:'3+', w:10, ld:'6+', oc:3} },
   { 
-      id: 'hs_pbc', name: 'Plagueburst Crawler', basePoints: 180, role: 'Vehicle', unique: false, synergy: 'daemon_engine indirect mortar anti_infantry durable entropy meta_artillery', sizes: [1], stats: {m:'9"', t:10, sv:'2+', w:12, ld:'6+', oc:4},
-      wargearProfiles: [ { name: 'Entropy Cannons', desc: 'Anti-Tank', tags: 'anti_tank lascannon' }, { name: 'Plaguespitters', desc: 'Overwatch/Anti-Infantry', tags: 'torrent overwatch' }, { name: 'Rothail', desc: 'Rapid Fire', tags: 'mid_range' } ],
-      weapons: [
-          {name: "Plagueburst Mortar", r:"48\"", a:"D6+3", bs_ws:"3+", s:8, ap:-1, d:2, keys: ["Blast", "Indirect Fire", "Lethal Hits"]},
-          {name: "Entropy Cannon", r:"24\"", a:1, bs_ws:"3+", s:10, ap:-3, d:"D6+1", keys: ["Lethal Hits"]},
-          {name: "Plaguespitter", r:"12\"", a:"D6", bs_ws:"N/A", s:6, ap:-1, d:1, keys: ["Torrent", "Ignores Cover"]},
-          {name: "Rothail Volley Gun", r:"24\"", a:3, bs_ws:"3+", s:5, ap:0, d:1, keys: ["Rapid Fire 3", "Sustained Hits 1"]}
+      id: 'hs_pbc', 
+      name: 'Plagueburst Crawler', 
+      basePoints: 180, 
+      role: 'Vehicle', 
+      unique: false, 
+      synergy: 'daemon_engine indirect mortar anti_infantry durable entropy', 
+      sizes: [1],
+      stats: {m:'9"', t:10, sv:'2+', w:12, ld:'6+', oc:4},
+      wargearProfiles: [
+          { name: 'Entropy Cannons', desc: 'Anti-Tank', tags: 'anti_tank lascannon' },
+          { name: 'Plaguespitters', desc: 'Overwatch/Anti-Infantry', tags: 'torrent overwatch' },
+          { name: 'Rothail', desc: 'Rapid Fire', tags: 'mid_range' }
       ]
   },
-  { id: 'hs_defiler', name: 'Death Guard Defiler', basePoints: 190, role: 'Vehicle', unique: false, synergy: 'daemon_engine hybrid walker scourge', sizes: [1], stats: {m:'8"', t:10, sv:'3+', w:14, ld:'6+', oc:5}, weapons: [{name: "Defiler Cannon", r:"48\"", a:"D6+3", bs_ws:"3+", s:10, ap:-1, d:3, keys: ["Blast"]}, {name: "Defiler Scourge", r:"Melee", a:5, bs_ws:"3+", s:12, ap:-2, d:3, keys: ["Extra Attacks 3"]}] },
+  { id: 'hs_defiler', name: 'Death Guard Defiler', basePoints: 190, role: 'Vehicle', unique: false, synergy: 'daemon_engine hybrid walker scourge', sizes: [1], stats: {m:'8"', t:10, sv:'3+', w:14, ld:'6+', oc:5} },
   { 
-      id: 'el_helbrute', name: 'Death Guard Helbrute', basePoints: 140, role: 'Vehicle', unique: false, synergy: 'contagion_buff walker', sizes: [1], stats: {m:'6"', t:9, sv:'2+', w:8, ld:'6+', oc:3},
-      wargearProfiles: [ { name: 'Range Focus', desc: 'Missile/Lascannon', tags: 'anti_tank long_range' }, { name: 'Hybrid', desc: 'Melee/Melta', tags: 'melee melta' }, { name: 'Melee Focus', desc: 'Double Fists', tags: 'melee' } ],
-      weapons: [
-          {name: "Twin Lascannon", r:"48\"", a:1, bs_ws:"3+", s:12, ap:-3, d:"D6+1", keys: ["Twin-Linked"]},
-          {name: "Helbrute Fist", r:"Melee", a:5, bs_ws:"3+", s:12, ap:-2, d:3, keys: []},
-          {name: "Multi-melta", r:"18\"", a:2, bs_ws:"3+", s:9, ap:-4, d:"D6", keys: ["Melta 2"]}
+      id: 'el_helbrute', 
+      name: 'Death Guard Helbrute', 
+      basePoints: 140, 
+      role: 'Vehicle', 
+      unique: false, 
+      synergy: 'contagion_buff walker', 
+      sizes: [1],
+      stats: {m:'6"', t:9, sv:'2+', w:8, ld:'6+', oc:3},
+      wargearProfiles: [
+          { name: 'Range Focus', desc: 'Missile/Lascannon', tags: 'anti_tank long_range' },
+          { name: 'Hybrid', desc: 'Melee/Melta', tags: 'melee melta' },
+          { name: 'Melee Focus', desc: 'Double Fists', tags: 'melee' }
       ]
   },
-  { id: 'hs_pred_ann', name: 'DG Predator Annihilator', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_tank lascannon', sizes: [1], stats: {m:'10"', t:10, sv:'3+', w:11, ld:'6+', oc:3}, weapons: [{name: "Predator Twin Lascannon", r:"48\"", a:1, bs_ws:"3+", s:14, ap:-3, d:"D6+1", keys: ["Twin-Linked"]}] },
-  { id: 'hs_pred_des', name: 'DG Predator Destructor', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_elite autocannon', sizes: [1], stats: {m:'10"', t:10, sv:'3+', w:11, ld:'6+', oc:3}, weapons: [{name: "Predator Autocannon", r:"48\"", a:4, bs_ws:"3+", s:9, ap:-1, d:3, keys: ["Rapid Fire 2"]}] },
-  { id: 'hs_lr', name: 'Death Guard Land Raider', basePoints: 240, role: 'Vehicle', unique: false, synergy: 'transport assault_ramp lascannon durable', sizes: [1], stats: {m:'10"', t:12, sv:'2+', w:16, ld:'6+', oc:5}, weapons: [{name: "Godhammer Lascannon", r:"48\"", a:2, bs_ws:"3+", s:12, ap:-3, d:"D6+1", keys: []}, {name: "Twin Heavy Bolter", r:"36\"", a:3, bs_ws:"3+", s:5, ap:-1, d:2, keys: ["Sustained Hits 1", "Twin-Linked"]}] },
+  { id: 'hs_pred_ann', name: 'DG Predator Annihilator', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_tank lascannon', sizes: [1], stats: {m:'10"', t:10, sv:'3+', w:11, ld:'6+', oc:3} },
+  { id: 'hs_pred_des', name: 'DG Predator Destructor', basePoints: 130, role: 'Vehicle', unique: false, synergy: 'anti_elite autocannon', sizes: [1], stats: {m:'10"', t:10, sv:'3+', w:11, ld:'6+', oc:3} },
+  { id: 'hs_lr', name: 'Death Guard Land Raider', basePoints: 240, role: 'Vehicle', unique: false, synergy: 'transport assault_ramp lascannon durable', sizes: [1], stats: {m:'10"', t:12, sv:'2+', w:16, ld:'6+', oc:5} },
 
   // --- OTHERS ---
-  { id: 'dt_rhino', name: 'Death Guard Rhino', basePoints: 75, role: 'Dedicated Transport', unique: false, synergy: 'transport firing_deck self_repair meta_transport', sizes: [1], stats: {m:'12"', t:9, sv:'3+', w:10, ld:'6+', oc:2}, weapons: [{name: "Combi-Bolter", r:"24\"", a:2, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Rapid Fire 2"]}] },
-  { id: 'fort_miasmic', name: 'Miasmic Malignifier', basePoints: 65, role: 'Fortification', unique: false, synergy: 'contagion_spread cover infiltrate', sizes: [1], stats: {m:'-', t:10, sv:'3+', w:12, ld:'7+', oc:0}, weapons: [] },
+  { id: 'dt_rhino', name: 'Death Guard Rhino', basePoints: 75, role: 'Dedicated Transport', unique: false, synergy: 'transport firing_deck self_repair', sizes: [1], stats: {m:'12"', t:9, sv:'3+', w:10, ld:'6+', oc:2} },
+  { id: 'fort_miasmic', name: 'Miasmic Malignifier', basePoints: 65, role: 'Fortification', unique: false, synergy: 'contagion_spread cover infiltrate', sizes: [1], stats: {m:'-', t:10, sv:'3+', w:12, ld:'7+', oc:0} },
 
   // --- ALLIES ---
-  { id: 'ally_guo', name: 'Great Unclean One (Ally)', basePoints: 230, role: 'Ally', unique: true, synergy: 'monster psyker fnp res', sizes: [1], stats: {m:'7"', t:12, sv:'4+', w:20, ld:'6+', oc:6}, weapons: [{name: "Bilesword", r:"Melee", a:6, bs_ws:"2+", s:8, ap:-2, d:4, keys: ["Lethal Hits"]}] },
-  { id: 'ally_rotigus', name: 'Rotigus (Ally)', basePoints: 230, role: 'Ally', unique: true, synergy: 'monster psyker mortal', sizes: [1], stats: {m:'7"', t:12, sv:'4+', w:20, ld:'6+', oc:6}, weapons: [{name: "Gnarlrod", r:"Melee", a:6, bs_ws:"2+", s:8, ap:-2, d:3, keys: ["Extra Attacks 2", "Lethal Hits"]}] },
-  { id: 'ally_poxbringer', name: 'Poxbringer (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'psyker buff_daemon', sizes: [1], stats: {m:'5"', t:5, sv:'5+', w:4, ld:'7+', oc:1}, weapons: [{name: "Balesword", r:"Melee", a:3, bs_ws:"3+", s:5, ap:-1, d:2, keys: ["Lethal Hits"]}] },
-  { id: 'ally_scrivener', name: 'Spoilpox Scrivener (Ally)', basePoints: 60, role: 'Ally', unique: false, synergy: 'buff_plaguebearers', sizes: [1], stats: {m:'5"', t:5, sv:'5+', w:4, ld:'7+', oc:1}, weapons: [{name: "Plaguesword", r:"Melee", a:4, bs_ws:"3+", s:4, ap:0, d:1, keys: ["Lethal Hits"]}] },
-  { id: 'ally_bilepiper', name: 'Sloppity Bilepiper (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'buff_nurgling battleshock', sizes: [1], stats: {m:'6"', t:5, sv:'5+', w:4, ld:'7+', oc:1}, weapons: [{name: "Marotter", r:"Melee", a:3, bs_ws:"3+", s:4, ap:-1, d:1, keys: []}] },
-  { id: 'ally_nurgling', name: 'Nurglings (Ally)', basePoints: 40, role: 'Ally', unique: false, synergy: 'infiltrate screen cheap -1_to_hit secondary_scoring', sizes: [3, 6, 9], stats: {m:'5"', t:3, sv:'6+', w:4, ld:'8+', oc:0}, weapons: [{name: "Diseased Claws", r:"Melee", a:4, bs_ws:"5+", s:2, ap:0, d:1, keys: ["Lethal Hits"]}] },
-  { id: 'ally_plaguebearers', name: 'Plaguebearers (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'sticky_obj screen deep_strike', sizes: [10], stats: {m:'5"', t:5, sv:'7+', w:2, ld:'7+', oc:2}, weapons: [{name: "Plaguesword", r:"Melee", a:2, bs_ws:"4+", s:4, ap:0, d:1, keys: ["Lethal Hits"]}] },
-  { id: 'ally_beast', name: 'Beast of Nurgle (Ally)', basePoints: 70, role: 'Ally', unique: false, synergy: 'durable deep_strike regenerate', sizes: [1, 2], stats: {m:'6"', t:9, sv:'5+', w:7, ld:'7+', oc:2}, weapons: [{name: "Putrid Appendages", r:"Melee", a:4, bs_ws:"4+", s:5, ap:-1, d:2, keys: ["Sustained Hits 1"]}] },
-  { id: 'ally_drones', name: 'Plague Drones (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'fly fast melee', sizes: [3, 6], stats: {m:'10"', t:8, sv:'5+', w:4, ld:'7+', oc:2}, weapons: [{name: "Plaguesword", r:"Melee", a:3, bs_ws:"4+", s:4, ap:0, d:1, keys: ["Lethal Hits"]}] },
-  { id: 'ally_wardog_brig', name: 'War Dog Brigand (Ally)', basePoints: 170, role: 'Ally', unique: false, synergy: 'vehicle walker shooting melta meta_ally', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8}, weapons: [{name: "Daemonbreath Spear", r:"24\"", a:2, bs_ws:"2+", s:12, ap:-4, d:"D6", keys: ["Melta 4"]}, {name: "Avenger Chaincannon", r:"24\"", a:12, bs_ws:"2+", s:6, ap:-1, d:1, keys: ["Sustained Hits 1"]}] },
-  { id: 'ally_wardog_karn', name: 'War Dog Karnivore (Ally)', basePoints: 140, role: 'Ally', unique: false, synergy: 'vehicle walker melee fast', sizes: [1], stats: {m:'14"', t:10, sv:'3+', w:12, ld:'7+', oc:8}, weapons: [{name: "Reaper Chaintalon (Strike)", r:"Melee", a:6, bs_ws:"2+", s:12, ap:-3, d:3, keys: []}, {name: "Reaper Chaintalon (Sweep)", r:"Melee", a:12, bs_ws:"2+", s:6, ap:-1, d:1, keys: []}] },
-  { id: 'ally_wardog_stalk', name: 'War Dog Stalker (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker hybrid character_sniper', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8}, weapons: [{name: "Daemonbreath Spear", r:"24\"", a:2, bs_ws:"3+", s:12, ap:-4, d:"D6", keys: ["Melta 4"]}, {name: "Slaughterclaw", r:"Melee", a:4, bs_ws:"3+", s:10, ap:-3, d:3, keys: []}] },
-  { id: 'ally_wardog_exec', name: 'War Dog Executioner (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker long_range autocannon', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8}, weapons: [{name: "2x War Dog Autocannon", r:"48\"", a:"4+4", bs_ws:"3+", s:9, ap:-1, d:3, keys: []}] },
-  { id: 'ally_wardog_hunt', name: 'War Dog Huntsman (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker anti_tank melta', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8}, weapons: [{name: "Daemonbreath Spear", r:"24\"", a:2, bs_ws:"3+", s:12, ap:-4, d:"D6", keys: ["Melta 4"]}, {name: "Reaper Chaintalon", r:"Melee", a:6, bs_ws:"3+", s:12, ap:-3, d:3, keys: []}] },
+  { id: 'ally_guo', name: 'Great Unclean One (Ally)', basePoints: 230, role: 'Ally', unique: true, synergy: 'monster psyker fnp res', sizes: [1], stats: {m:'7"', t:12, sv:'4+', w:20, ld:'6+', oc:6} },
+  { id: 'ally_rotigus', name: 'Rotigus (Ally)', basePoints: 230, role: 'Ally', unique: true, synergy: 'monster psyker mortal', sizes: [1], stats: {m:'7"', t:12, sv:'4+', w:20, ld:'6+', oc:6} },
+  { id: 'ally_poxbringer', name: 'Poxbringer (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'psyker buff_daemon', sizes: [1], stats: {m:'5"', t:5, sv:'5+', w:4, ld:'7+', oc:1} },
+  { id: 'ally_scrivener', name: 'Spoilpox Scrivener (Ally)', basePoints: 60, role: 'Ally', unique: false, synergy: 'buff_plaguebearers', sizes: [1], stats: {m:'5"', t:5, sv:'5+', w:4, ld:'7+', oc:1} },
+  { id: 'ally_bilepiper', name: 'Sloppity Bilepiper (Ally)', basePoints: 55, role: 'Ally', unique: false, synergy: 'buff_nurgling battleshock', sizes: [1], stats: {m:'6"', t:5, sv:'5+', w:4, ld:'7+', oc:1} },
+  { id: 'ally_nurgling', name: 'Nurglings (Ally)', basePoints: 40, role: 'Ally', unique: false, synergy: 'infiltrate screen cheap -1_to_hit', sizes: [3, 6, 9], stats: {m:'5"', t:3, sv:'6+', w:4, ld:'8+', oc:0} },
+  { id: 'ally_plaguebearers', name: 'Plaguebearers (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'sticky_obj screen deep_strike', sizes: [10], stats: {m:'5"', t:5, sv:'7+', w:2, ld:'7+', oc:2} },
+  { id: 'ally_beast', name: 'Beast of Nurgle (Ally)', basePoints: 70, role: 'Ally', unique: false, synergy: 'durable deep_strike regenerate', sizes: [1, 2], stats: {m:'6"', t:9, sv:'5+', w:7, ld:'7+', oc:2} },
+  { id: 'ally_drones', name: 'Plague Drones (Ally)', basePoints: 110, role: 'Ally', unique: false, synergy: 'fly fast melee', sizes: [3, 6], stats: {m:'10"', t:8, sv:'5+', w:4, ld:'7+', oc:2} },
+  { id: 'ally_wardog_brig', name: 'War Dog Brigand (Ally)', basePoints: 170, role: 'Ally', unique: false, synergy: 'vehicle walker shooting melta', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8} },
+  { id: 'ally_wardog_karn', name: 'War Dog Karnivore (Ally)', basePoints: 140, role: 'Ally', unique: false, synergy: 'vehicle walker melee fast', sizes: [1], stats: {m:'14"', t:10, sv:'3+', w:12, ld:'7+', oc:8} },
+  { id: 'ally_wardog_stalk', name: 'War Dog Stalker (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker hybrid character_sniper', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8} },
+  { id: 'ally_wardog_exec', name: 'War Dog Executioner (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker long_range autocannon', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8} },
+  { id: 'ally_wardog_hunt', name: 'War Dog Huntsman (Ally)', basePoints: 150, role: 'Ally', unique: false, synergy: 'vehicle walker anti_tank melta', sizes: [1], stats: {m:'12"', t:10, sv:'3+', w:12, ld:'7+', oc:8} },
 ];
 
 function AppContent() {
@@ -318,6 +328,9 @@ function AppContent() {
   const [appError, setAppError] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
   const [viewingUnit, setViewingUnit] = useState(null);
+  
+  const [addingEnhancementId, setAddingEnhancementId] = useState(null); 
+  const [selectedEnhancement, setSelectedEnhancement] = useState("");
 
   const [prioritizePainted, setPrioritizePainted] = useState(false);
   const [editingPointsId, setEditingPointsId] = useState(null); 
@@ -326,8 +339,7 @@ function AppContent() {
   const [savedLists, setSavedLists] = useState([]);
   const [expandedWargearId, setExpandedWargearId] = useState(null);
 
-  // --- PHASE 4: DATA INDEPENDENCE ---
-  const [unitDatabase, setUnitDatabase] = useState(DEFAULT_UNIT_DATABASE);
+  const [unitDatabase, setUnitDatabase] = useState(UNIT_DATABASE);
 
   const [gameTurn, setGameTurn] = useState(1);
   const [selectedSickness, setSelectedSickness] = useState(SICKNESSES[0].id);
@@ -335,12 +347,12 @@ function AppContent() {
   const [objectives, setObjectives] = useState({
     alpha: false, beta: false, gamma: false, delta: false, epsilon: false, zeta: false
   });
+  const [activeSecondaries, setActiveSecondaries] = useState([]);
   
   const [mathStr, setMathStr] = useState(4);
   const [mathTough, setMathTough] = useState(4);
-  const fileInputRef = useRef(null);
 
-  // --- LOAD DATA (INCLUDING DB) ---
+  // --- LOAD DATA ---
   useEffect(() => {
     try {
       const savedInv = localStorage.getItem('mm_dg_inventory_v3');
@@ -355,7 +367,7 @@ function AppContent() {
     setIsLoaded(true);
   }, []);
 
-  // --- SAVE DATA (INCLUDING DB) ---
+  // --- SAVE DATA ---
   useEffect(() => {
     if (isLoaded) {
       try {
@@ -368,7 +380,54 @@ function AppContent() {
     }
   }, [inventory, savedLists, unitDatabase, isLoaded]);
 
-  // --- INVENTORY ACTIONS ---
+  const getAvailableEnhancements = () => {
+      const activeDet = suggestedDetachment || DETACHMENTS[0];
+      return activeDet.enhancements || [];
+  };
+
+  const addEnhancement = (unitUuid) => {
+      if (!selectedEnhancement) return;
+      const enh = getAvailableEnhancements().find(e => e.name === selectedEnhancement);
+      if (!enh) return;
+
+      setCurrentList(prev => prev.map(u => {
+          if (u.uuid !== unitUuid) return u;
+          return { ...u, enhancement: enh };
+      }));
+      setAddingEnhancementId(null);
+      setSelectedEnhancement("");
+      showNotification("Enhancement Added");
+  };
+
+  const removeEnhancement = (unitUuid) => {
+      setCurrentList(prev => prev.map(u => {
+          if (u.uuid !== unitUuid) return u;
+          const { enhancement, ...rest } = u;
+          return rest;
+      }));
+  };
+
+  const toggleSecondary = (sec) => {
+      setActiveSecondaries(prev => {
+          const exists = prev.find(s => s.name === sec.name);
+          if (exists) return prev.filter(s => s.name !== sec.name);
+          if (prev.length >= 2) return prev; 
+          return [...prev, { ...sec, scored: false }];
+      });
+  };
+
+  const scoreSecondary = (secName) => {
+      setActiveSecondaries(prev => prev.map(s => {
+          if (s.name !== secName) return s;
+          const isScored = !s.scored;
+          setScores(curr => ({
+              ...curr, 
+              vpMe: curr.vpMe + (isScored ? s.score : -s.score)
+          }));
+          return { ...s, scored: isScored };
+      }));
+  };
+
   const addToInventory = (unit) => {
     try {
         const newUnit = {
@@ -721,16 +780,17 @@ function AppContent() {
 
         DETACHMENTS.forEach(det => {
             let matchCount = 0;
-            if (det.id === 'terminus_est') matchCount = safeCheckList.filter(u => u.role === 'Battleline' || u.name.includes('Poxwalker') || u.name.includes('Terminator')).length;
+            if (det.id === 'shamblerot_vectorium') matchCount = safeCheckList.filter(u => u.role === 'Battleline' || u.name.includes('Poxwalker') || u.name.includes('Terminator')).length;
             else if (det.id === 'poxmongers') matchCount = safeCheckList.filter(u => u.synergy.includes('daemon_engine') || u.role === 'Vehicle' || u.name.includes('War Dog')).length;
-            else if (det.id === 'wretched') matchCount = safeCheckList.filter(u => u.synergy.includes('psyker')).length;
-            else if (det.id === 'mortarions_anvil') matchCount = safeCheckList.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord') || u.role === 'Character').length;
-            else if (det.id === 'inexorable') matchCount = safeCheckList.filter(u => u.role === 'Dedicated Transport' || u.name.includes('Land Raider')).length;
+            else if (det.id === 'tallyband_summoners') matchCount = safeCheckList.filter(u => u.synergy.includes('psyker')).length;
+            else if (det.id === 'death_lords_chosen') matchCount = safeCheckList.filter(u => u.name.includes('Deathshroud') || u.name.includes('Blightlord') || u.role === 'Character').length;
+            else if (det.id === 'mortarions_hammer') matchCount = safeCheckList.filter(u => u.role === 'Vehicle' || u.synergy.includes('monster')).length;
             else if (det.id === 'ferrymen') matchCount = safeCheckList.filter(u => u.name.includes('Bloat-drone') || u.name.includes('Poxwalker') || u.name.includes('Blightlord')).length;
             else if (det.id === 'chosen_sons') matchCount = safeCheckList.filter(u => u.synergy.includes('torrent') || u.synergy.includes('flamer') || u.name.includes('Deathshroud')).length;
+            else if (det.id === 'champions_of_contagion') matchCount = safeCheckList.filter(u => u.role === 'Character' || u.role === 'Epic Hero').length;
             else matchCount = 3; 
 
-            if (det.id === 'terminus_est') {
+            if (det.id === 'shamblerot_vectorium') {
                  const vehicleCount = safeCheckList.filter(u => u.role === 'Vehicle' && !u.name.includes('War Dog')).length;
                  if (vehicleCount > 0) matchCount = -100; 
             }
@@ -771,22 +831,22 @@ function AppContent() {
   );
 
   const organizedList = organizeArmy(currentList);
-  const contagionRange = gameTurn === 1 ? 3 : (gameTurn === 2 ? 6 : 9);
   
+  const totalListPoints = currentList.reduce((acc, unit) => {
+      let pts = unit.points;
+      if (unit.enhancement) pts += (parseInt(unit.enhancement.points) || 0);
+      return acc + pts;
+  }, 0);
+
+  const contagionRange = gameTurn === 1 ? 3 : (gameTurn === 2 ? 6 : 9);
   const paintedCount = inventory.filter(u => ['painted', 'parade'].includes(u.status || 'pile')).length;
   const progressPercent = inventory.length > 0 ? Math.round((paintedCount / inventory.length) * 100) : 0;
 
   const activeStratagems = suggestedDetachment ? suggestedDetachment.stratagems : DETACHMENTS[0].stratagems;
   const activeDetachmentName = suggestedDetachment ? suggestedDetachment.name : DETACHMENTS[0].name;
 
-  // --- EXPORT/IMPORT FUNCTIONS ---
   const exportData = () => {
-    const data = {
-      inventory,
-      savedLists,
-      version: "1.0",
-      timestamp: new Date().toISOString()
-    };
+    const data = { inventory, savedLists, version: "1.0", timestamp: new Date().toISOString() };
     const jsonString = JSON.stringify(data, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -815,7 +875,6 @@ function AppContent() {
   const importData = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -838,7 +897,6 @@ function AppContent() {
   const importDatabase = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
@@ -859,10 +917,40 @@ function AppContent() {
 
   const resetDatabase = () => {
       if(confirm("Revert to factory default unit stats?")) {
-          setUnitDatabase(DEFAULT_UNIT_DATABASE);
+          setUnitDatabase(UNIT_DATABASE);
           try { localStorage.removeItem('mm_dg_database_v1'); } catch(e) {}
           showNotification("Database Reset to Defaults");
       }
+  };
+
+  const generateExportText = () => {
+      const detName = suggestedDetachment ? suggestedDetachment.name : "Plague Company";
+      let text = `+++ MUSTER & MANIFEST ARMY LIST +++\n`;
+      text += `POINTS: ${totalListPoints} / ${targetPoints}\n`;
+      text += `DETACHMENT: ${detName}\n\n`;
+      
+      const organized = organizeArmy(currentList);
+      organized.forEach(item => {
+          if (item.type === 'squad') {
+              let pts = item.body.points;
+              if (item.body.enhancement) pts += parseInt(item.body.enhancement.points);
+              text += `[${pts}pts] ${item.body.name} (${item.body.modelCount})\n`;
+              if (item.body.enhancement) text += `  * Enhancement: ${item.body.enhancement.name} (+${item.body.enhancement.points}pts)\n`;
+
+              item.leaders.forEach(l => {
+                  let lPts = l.points;
+                  if (l.enhancement) lPts += parseInt(l.enhancement.points);
+                  text += `  + Leader: ${l.name} [${lPts}pts]\n`;
+                  if (l.enhancement) text += `    * Enhancement: ${l.enhancement.name} (+${l.enhancement.points}pts)\n`;
+              });
+          } else {
+              let pts = item.unit.points;
+              if (item.unit.enhancement) pts += parseInt(item.unit.enhancement.points);
+              text += `[${pts}pts] ${item.unit.name} (${item.unit.modelCount})\n`;
+              if (item.unit.enhancement) text += `  * Enhancement: ${item.unit.enhancement.name} (+${item.unit.enhancement.points}pts)\n`;
+          }
+      });
+      return text;
   };
 
   return (
@@ -898,9 +986,7 @@ function AppContent() {
           </button>
         </div>
         
-        {/* ... (Previous Tabs Code: Inventory, Builder, Battle, Wishlist - Retained and functional) ... */}
-        {/* I am re-inserting the previous tabs logic to ensure the full file is functional */}
-        
+        {/* INVENTORY TAB */}
         {activeTab === 'inventory' && (
             <div className="space-y-8">
               <div className="bg-slate-800 rounded-xl border border-slate-700 shadow-lg overflow-hidden flex flex-col h-[600px]">
@@ -974,7 +1060,6 @@ function AppContent() {
                                         </div>
                                         
                                         <div className="flex items-center gap-3 self-end sm:self-auto">
-                                            {/* Painting Status Selector */}
                                             <select 
                                                 value={item.status || 'pile'}
                                                 onChange={(e) => updateUnitStatus(item.uuid, e.target.value)}
@@ -985,7 +1070,6 @@ function AppContent() {
                                                 ))}
                                             </select>
 
-                                            {/* WARGEAR CONFIG BUTTON */}
                                             {dbUnit.wargearProfiles && (
                                                 <button 
                                                     onClick={() => setExpandedWargearId(isWargearOpen ? null : item.uuid)}
@@ -1011,7 +1095,7 @@ function AppContent() {
                                     
                                     {isWargearOpen && dbUnit.wargearProfiles && (
                                         <div className="bg-slate-900/80 p-3 rounded border border-blue-900/50 mt-1">
-                                            <div className="text-[10px] text-blue-400 font-bold uppercase mb-2">Select Active Capabilities (Multiple Allowed)</div>
+                                            <div className="text-[10px] text-blue-400 font-bold uppercase mb-2">Select Active Capabilities</div>
                                             <div className="grid grid-cols-2 gap-2">
                                                 {dbUnit.wargearProfiles.map(profile => {
                                                     const isActive = (item.activeWargear || []).includes(profile.name);
@@ -1089,7 +1173,7 @@ function AppContent() {
             </div>
         )}
 
-        {/* ... (Builder and Wishlist tabs largely same logic) ... */}
+        {/* BUILDER TAB */}
         {activeTab === 'builder' && (
             <div className="space-y-6">
               <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
@@ -1102,7 +1186,6 @@ function AppContent() {
                             <p className="text-slate-400 text-sm">Configure your mission parameters.</p>
                          </div>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                          <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
                             <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
@@ -1116,7 +1199,6 @@ function AppContent() {
                                 <option value="3000">3000 pts (Onslaught)</option>
                             </select>
                          </div>
-
                          <div className="bg-slate-900 p-3 rounded-lg border border-slate-700">
                             <label className="text-xs text-slate-400 uppercase font-bold mb-1 block flex items-center gap-2">
                                 <Skull size={14} className="text-red-400"/> Enemy Faction
@@ -1129,8 +1211,6 @@ function AppContent() {
                             </div>
                          </div>
                     </div>
-
-                    {/* PAINTED FILTER TOGGLE */}
                     <button 
                         onClick={() => setPrioritizePainted(!prioritizePainted)}
                         className={`w-full py-2 rounded-lg flex items-center justify-center gap-2 text-sm font-bold border transition-all ${prioritizePainted ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500'}`}
@@ -1138,14 +1218,12 @@ function AppContent() {
                         <Brush size={16} /> 
                         {prioritizePainted ? "Prioritizing Painted Models" : "Use All Models"}
                     </button>
-
                     <button onClick={generateSmartList} className="w-full bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-lg shadow-green-900/20 font-bold">
                         <Zap size={20} /> <span>Auto-Generate List</span>
                     </button>
                 </div>
               </div>
 
-              {/* BATTLE PLANS SECTION */}
               <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
                   <div className="flex items-center gap-2 mb-4 text-green-400 font-bold">
                       <FolderOpen size={18}/> <span>Battle Plans</span>
@@ -1159,7 +1237,6 @@ function AppContent() {
                       />
                       <button onClick={saveCurrentList} className="bg-green-700 hover:bg-green-600 px-3 py-2 rounded text-white text-sm font-bold flex items-center gap-1"><Save size={14}/> Save</button>
                   </div>
-                  
                   {savedLists.length > 0 && (
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                           {savedLists.map(plan => (
@@ -1194,7 +1271,7 @@ function AppContent() {
                   <div>
                     <h3 className="text-lg font-semibold text-white">Current Detachment</h3>
                     <div className="flex items-center gap-2 mt-1">
-                       {currentList.reduce((a, b) => a + b.points, 0) > targetPoints ? (
+                       {totalListPoints > targetPoints ? (
                          <span className="text-red-400 text-sm flex items-center gap-1"><AlertTriangle size={14}/> Over Limit</span>
                        ) : (
                          <span className="text-green-400 text-sm flex items-center gap-1"><CheckCircle2 size={14}/> Legal</span>
@@ -1206,8 +1283,8 @@ function AppContent() {
                         <Share2 size={14} /> Export
                      </button>
                      <div className="text-right">
-                        <div className={`text-3xl font-bold ${currentList.reduce((a, b) => a + b.points, 0) > targetPoints ? 'text-red-400' : 'text-white'}`}>
-                            {currentList.reduce((a, b) => a + b.points, 0)} <span className="text-lg text-slate-500">/ {targetPoints}</span>
+                        <div className={`text-3xl font-bold ${totalListPoints > targetPoints ? 'text-red-400' : 'text-white'}`}>
+                            {totalListPoints} <span className="text-lg text-slate-500">/ {targetPoints}</span>
                         </div>
                         <button onClick={clearList} className="text-xs text-red-400 hover:underline mt-1">Clear List</button>
                      </div>
@@ -1225,44 +1302,71 @@ function AppContent() {
                     {organizedList.map((item, idx) => {
                       if (item.type === 'single') {
                         const unit = item.unit;
+                        const hasEnhancement = unit.enhancement && unit.enhancement.name;
                         return (
-                          <div key={idx} className="flex items-center justify-between p-3 bg-slate-700/30 rounded border border-slate-700/50">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
-                              <div>
-                                <div className="text-white font-medium">{unit.name}</div>
-                                <div className="text-xs text-slate-400 flex items-center gap-2">
-                                    {unit.role} • <span className="text-slate-300">{unit.modelCount} Models</span>
-                                    {/* Render Active Wargear in List */}
-                                    {unit.activeWargear && unit.activeWargear.length > 0 && (
-                                        <div className="flex flex-wrap gap-1">
-                                            {unit.activeWargear.map(w => <span key={w} className="text-[8px] bg-blue-900/30 text-blue-300 px-1 rounded border border-blue-900/50">{w}</span>)}
+                          <div key={idx} className="bg-slate-700/30 rounded border border-slate-700/50 p-3">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <div className={`w-1 h-8 rounded-full ${roleColor(unit.role, true)}`}></div>
+                                  <div>
+                                    <div className="text-white font-medium flex items-center gap-2">
+                                        {unit.name}
+                                        {hasEnhancement && <Gem size={12} className="text-purple-400" />}
+                                    </div>
+                                    <div className="text-xs text-slate-400 flex items-center gap-2">
+                                        {unit.role} • <span className="text-slate-300">{unit.modelCount} Models</span>
+                                        {unit.activeWargear && unit.activeWargear.length > 0 && (
+                                            <div className="flex flex-wrap gap-1">
+                                                {unit.activeWargear.map(w => <span key={w} className="text-[8px] bg-blue-900/30 text-blue-300 px-1 rounded border border-blue-900/50">{w}</span>)}
+                                            </div>
+                                        )}
+                                        <button onClick={() => setViewingUnit(unitDatabase.find(u => u.id === unit.unitId))} className="text-slate-500 hover:text-white ml-2"><Eye size={14}/></button>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col items-end">
+                                    <div className="font-mono text-slate-300">{unit.points + (hasEnhancement ? parseInt(unit.enhancement.points) : 0)} pts</div>
+                                    {unit.role === 'Character' && !hasEnhancement && (
+                                        <div className="relative group">
+                                            <button 
+                                                className="text-[10px] text-green-400 hover:text-green-300 flex items-center gap-1 mt-1"
+                                                onClick={() => setAddingEnhancementId(unit.uuid === addingEnhancementId ? null : unit.uuid)}
+                                            >
+                                                <Plus size={10}/> Enhance
+                                            </button>
+                                            {addingEnhancementId === unit.uuid && (
+                                                <div className="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-600 rounded shadow-xl z-20">
+                                                    <div className="text-[10px] uppercase text-slate-500 font-bold px-2 py-1 bg-slate-950">Select Enhancement</div>
+                                                    {getAvailableEnhancements().map(e => (
+                                                        <button 
+                                                            key={e.name}
+                                                            onClick={() => { setSelectedEnhancement(e.name); addEnhancement(unit.uuid); }}
+                                                            className="w-full text-left px-2 py-1.5 hover:bg-green-900/50 text-xs text-white flex justify-between"
+                                                        >
+                                                            <span>{e.name}</span>
+                                                            <span className="text-slate-400">{e.points}pts</span>
+                                                        </button>
+                                                    ))}
+                                                    {getAvailableEnhancements().length === 0 && <div className="p-2 text-xs text-slate-500 italic">No enhancements available.</div>}
+                                                </div>
+                                            )}
                                         </div>
                                     )}
-                                    {OPPONENTS.find(o => o.id === opponent)?.priority.some(tag => {
-                                        // Re-calculate full synergy for icon display
-                                        let fullSynergy = unit.synergy || '';
-                                        const dbUnit = unitDatabase.find(db => db.id === unit.unitId);
-                                        if (dbUnit && dbUnit.wargearProfiles && unit.activeWargear) {
-                                            unit.activeWargear.forEach(pName => {
-                                                const p = dbUnit.wargearProfiles.find(x => x.name === pName);
-                                                if (p) fullSynergy += ' ' + p.tags;
-                                            });
-                                        }
-                                        return fullSynergy.includes(tag);
-                                    }) && (
-                                        <span className="text-yellow-400 ml-1 flex items-center gap-0.5" title="Effective against selected enemy"><Target size={10}/> Counter</span>
-                                    )}
                                 </div>
-                              </div>
                             </div>
-                            <div className="font-mono text-slate-300">{unit.points} pts</div>
-                            <button onClick={() => setViewingUnit(unitDatabase.find(u => u.id === unit.unitId))} className="text-slate-500 hover:text-white ml-2"><Eye size={14}/></button>
+                            {hasEnhancement && (
+                                <div className="mt-2 flex justify-between items-center bg-purple-900/20 px-2 py-1 rounded border border-purple-500/30">
+                                    <div className="text-xs text-purple-300 flex items-center gap-1"><Gem size={10}/> {unit.enhancement.name} (+{unit.enhancement.points}pts)</div>
+                                    <button onClick={() => removeEnhancement(unit.uuid)} className="text-slate-500 hover:text-red-400"><X size={12}/></button>
+                                </div>
+                            )}
                           </div>
                         );
                       } else {
-                        // SQUAD CARD
-                        const squadPoints = item.body.points + item.leaders.reduce((a,l) => a+l.points, 0);
+                        const squadPoints = item.body.points + 
+                                          (item.body.enhancement ? parseInt(item.body.enhancement.points) : 0) + 
+                                          item.leaders.reduce((a,l) => a + l.points + (l.enhancement ? parseInt(l.enhancement.points) : 0), 0);
+                        
                         return (
                           <div key={idx} className="bg-slate-700/50 rounded-lg border border-slate-600 overflow-hidden">
                              <div className="p-3 bg-slate-800/80 border-b border-slate-600 flex justify-between items-center">
@@ -1273,28 +1377,65 @@ function AppContent() {
                                 <span className="font-mono text-green-400 font-bold">{squadPoints} pts</span>
                              </div>
                              <div className="p-2 space-y-2">
-                                {item.leaders.map((l, lIdx) => (
-                                    <div key={`l-${lIdx}`} className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-yellow-500/20">
-                                        <div className="flex items-center gap-2">
-                                            <div className="w-1 h-6 rounded-full bg-yellow-600"></div>
-                                            <div>
-                                                <div className="text-sm font-medium text-yellow-100">{l.name}</div>
-                                                <div className="text-[10px] text-yellow-500/70 uppercase font-bold">Leader</div>
+                                {item.leaders.map((l, lIdx) => {
+                                    const hasEnhancement = l.enhancement && l.enhancement.name;
+                                    return (
+                                        <div key={`l-${lIdx}`} className="bg-slate-800/50 rounded border border-yellow-500/20 p-2">
+                                            <div className="flex items-center justify-between">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1 h-6 rounded-full bg-yellow-600"></div>
+                                                    <div>
+                                                        <div className="text-sm font-medium text-yellow-100 flex items-center gap-1">
+                                                            {l.name}
+                                                            {hasEnhancement && <Gem size={10} className="text-purple-400" />}
+                                                        </div>
+                                                        <div className="text-[10px] text-yellow-500/70 uppercase font-bold">Leader</div>
+                                                    </div>
+                                                </div>
+                                                <div className="flex flex-col items-end">
+                                                    <div className="text-xs text-slate-400">{l.points + (hasEnhancement ? parseInt(l.enhancement.points) : 0)} pts</div>
+                                                    {!hasEnhancement && (
+                                                        <div className="relative">
+                                                            <button 
+                                                                onClick={() => setAddingEnhancementId(l.uuid === addingEnhancementId ? null : l.uuid)}
+                                                                className="text-[9px] text-green-400 hover:text-green-300 flex items-center gap-1"
+                                                            >
+                                                                <Plus size={8}/> Enhance
+                                                            </button>
+                                                            {addingEnhancementId === l.uuid && (
+                                                                <div className="absolute right-0 mt-1 w-48 bg-slate-900 border border-slate-600 rounded shadow-xl z-20">
+                                                                    <div className="text-[10px] uppercase text-slate-500 font-bold px-2 py-1 bg-slate-950">Select Enhancement</div>
+                                                                    {getAvailableEnhancements().map(e => (
+                                                                        <button 
+                                                                            key={e.name}
+                                                                            onClick={() => { setSelectedEnhancement(e.name); addEnhancement(l.uuid); }}
+                                                                            className="w-full text-left px-2 py-1.5 hover:bg-green-900/50 text-xs text-white flex justify-between"
+                                                                        >
+                                                                            <span>{e.name}</span>
+                                                                            <span className="text-slate-400">{e.points}pts</span>
+                                                                        </button>
+                                                                    ))}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </div>
+                                            {hasEnhancement && (
+                                                <div className="mt-1 flex justify-between items-center bg-purple-900/20 px-2 py-0.5 rounded">
+                                                    <div className="text-[10px] text-purple-300 flex items-center gap-1"><Gem size={8}/> {l.enhancement.name} (+{l.enhancement.points})</div>
+                                                    <button onClick={() => removeEnhancement(l.uuid)} className="text-slate-500 hover:text-red-400"><X size={10}/></button>
+                                                </div>
+                                            )}
                                         </div>
-                                        <div className="text-xs text-slate-400 flex items-center gap-2">
-                                            {l.points} pts
-                                            <button onClick={() => setViewingUnit(unitDatabase.find(u => u.id === l.unitId))} className="text-slate-500 hover:text-white"><Eye size={12}/></button>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                                 <div className="flex items-center justify-between p-2 bg-slate-800/50 rounded border border-slate-700">
                                     <div className="flex items-center gap-2">
                                         <div className={`w-1 h-6 rounded-full ${roleColor(item.body.role, true)}`}></div>
                                         <div>
                                             <div className="text-sm font-medium text-white">{item.body.name}</div>
                                             <div className="text-[10px] text-slate-500 uppercase font-bold">Bodyguard • {item.body.modelCount} Models</div>
-                                            {/* Render Active Wargear in List */}
                                             {item.body.activeWargear && item.body.activeWargear.length > 0 && (
                                                 <div className="flex flex-wrap gap-1 mt-0.5">
                                                     {item.body.activeWargear.map(w => <span key={w} className="text-[8px] bg-blue-900/30 text-blue-300 px-1 rounded border border-blue-900/50">{w}</span>)}
@@ -1318,7 +1459,242 @@ function AppContent() {
             </div>
         )}
 
-        {/* --- ACQUISITIONS (WISHLIST) TAB --- */}
+        {/* --- COMMAND BUNKER (PHASE 1 + PHASE 3) --- */}
+        {activeTab === 'battle' && (
+            <div className="space-y-6">
+                
+                {/* 1. TURN & CONTAGION TRACKER */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
+                    <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                            <Timer className="text-green-400" />
+                            <h2 className="text-lg font-bold text-white">Battle Round</h2>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <button onClick={() => setGameTurn(Math.max(1, gameTurn - 1))} className="w-8 h-8 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white">-</button>
+                            <span className="text-2xl font-bold text-white w-8 text-center">{gameTurn}</span>
+                            <button onClick={() => setGameTurn(Math.min(5, gameTurn + 1))} className="w-8 h-8 rounded bg-green-600 hover:bg-green-500 flex items-center justify-center text-white">+</button>
+                        </div>
+                    </div>
+                    <div className="p-6 text-center">
+                        <div className="text-sm text-slate-400 uppercase tracking-widest font-bold mb-2">Current Nurgle's Gift Range</div>
+                        <div className="text-6xl font-black text-green-500 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
+                            {contagionRange}"
+                        </div>
+                        
+                        {/* PLAGUE SELECTOR */}
+                        <div className="mt-4 pt-4 border-t border-slate-700">
+                            <div className="flex items-center justify-center gap-2 mb-2">
+                                <Biohazard size={16} className="text-yellow-500" />
+                                <span className="text-xs font-bold text-slate-300 uppercase">Active Plague</span>
+                            </div>
+                            <select 
+                                value={selectedSickness} 
+                                onChange={(e) => setSelectedSickness(e.target.value)}
+                                className="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg p-2 w-full max-w-xs focus:outline-none focus:border-green-500"
+                            >
+                                {SICKNESSES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                            </select>
+                        </div>
+
+                        <div className="text-xs text-slate-400 mt-4 bg-slate-900/50 p-3 rounded border border-slate-700 inline-block text-left">
+                            <div className="font-bold text-green-400 mb-1">AURA EFFECTS:</div>
+                            <ul className="list-disc pl-4 space-y-1">
+                                <li>Subtract 1 from Toughness</li>
+                                <li>{SICKNESSES.find(s => s.id === selectedSickness)?.effect}</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 2. NURGLE'S MATH (WOUND CALCULATOR) - NEW PHASE 3 FEATURE */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Percent className="text-blue-400" />
+                        <h3 className="font-bold text-white">Nurgle's Math (Wound Roll)</h3>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">My Strength</label>
+                            <input 
+                                type="number" 
+                                value={mathStr}
+                                onChange={(e) => setMathStr(parseInt(e.target.value) || 0)}
+                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
+                            />
+                        </div>
+                        <div>
+                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">Enemy Toughness</label>
+                            <input 
+                                type="number" 
+                                value={mathTough}
+                                onChange={(e) => setMathTough(parseInt(e.target.value) || 0)}
+                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
+                            />
+                        </div>
+                    </div>
+                    
+                    <div className="bg-slate-900/50 p-3 rounded border border-slate-700 flex justify-between items-center">
+                        <div className="text-xs text-slate-400">
+                            <div>Target T modified to: <span className="text-green-400 font-bold">{Math.max(1, mathTough - 1)}</span></div>
+                            <div className="text-[10px] text-slate-500">(Due to Nurgle's Gift Aura)</div>
+                        </div>
+                        <div className="text-right">
+                            <div className="text-xs text-slate-400 uppercase">Wound Roll</div>
+                            <div className="text-3xl font-black text-white">{getWoundRoll()}+</div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. STRATAGEM LIBRARY - DETACHMENT SPECIFIC */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <BookOpen className="text-purple-400" />
+                        <div className="flex flex-col">
+                            <h3 className="font-bold text-white">Stratagems</h3>
+                            <span className="text-[10px] text-slate-400 uppercase">{activeDetachmentName}</span>
+                        </div>
+                    </div>
+                    <div className="space-y-3">
+                        {activeStratagems.map((strat, idx) => (
+                            <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
+                                <div className="flex justify-between items-start mb-1">
+                                    <span className="font-bold text-purple-300 text-sm">{strat.name}</span>
+                                    <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded border border-slate-600">{strat.cp}CP</span>
+                                </div>
+                                <div className="text-[10px] text-slate-500 font-mono mb-1 uppercase">{strat.phase}</div>
+                                <div className="text-xs text-slate-300">{strat.desc}</div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+
+                {/* 4. SCOREBOARD */}
+                <div className="grid grid-cols-2 gap-4">
+                    {/* PLAYER */}
+                    <div className="bg-slate-800 rounded-xl border border-green-500/30 p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
+                        <h3 className="text-center text-green-400 font-bold mb-4">YOU</h3>
+                        
+                        <div className="flex justify-between mb-4">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">CP</div>
+                                <div className="text-2xl font-bold text-white">{scores.cpMe}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, cpMe: Math.max(0, scores.cpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, cpMe: scores.cpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                            <div className="text-center border-l border-slate-700 pl-4">
+                                <div className="text-xs text-slate-500 mb-1">VP</div>
+                                <div className="text-2xl font-bold text-white">{scores.vpMe}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, vpMe: Math.max(0, scores.vpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, vpMe: scores.vpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* OPPONENT */}
+                    <div className="bg-slate-800 rounded-xl border border-red-500/30 p-4 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
+                        <h3 className="text-center text-red-400 font-bold mb-4">ENEMY</h3>
+                        
+                        <div className="flex justify-between mb-4">
+                            <div className="text-center">
+                                <div className="text-xs text-slate-500 mb-1">CP</div>
+                                <div className="text-2xl font-bold text-white">{scores.cpOpp}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, cpOpp: Math.max(0, scores.cpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, cpOpp: scores.cpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                            <div className="text-center border-l border-slate-700 pl-4">
+                                <div className="text-xs text-slate-500 mb-1">VP</div>
+                                <div className="text-2xl font-bold text-white">{scores.vpOpp}</div>
+                                <div className="flex gap-1 justify-center mt-1">
+                                    <button onClick={() => setScores({...scores, vpOpp: Math.max(0, scores.vpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
+                                    <button onClick={() => setScores({...scores, vpOpp: scores.vpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* 5. SECONDARY MISSIONS TRACKER */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Scroll className="text-blue-400" />
+                        <h3 className="font-bold text-white">Secondary Missions</h3>
+                    </div>
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
+                             {SECONDARIES.map(sec => {
+                                 const isActive = activeSecondaries.some(s => s.name === sec.name);
+                                 return (
+                                     <button 
+                                        key={sec.name}
+                                        onClick={() => toggleSecondary(sec)}
+                                        disabled={!isActive && activeSecondaries.length >= 2}
+                                        className={`text-left text-xs p-2 rounded border transition-all ${isActive ? 'bg-blue-900/50 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-500 hover:bg-slate-800'}`}
+                                     >
+                                         <div className="font-bold">{sec.name}</div>
+                                         <div className="text-[10px] opacity-70">{sec.type} • {sec.score}VP</div>
+                                     </button>
+                                 )
+                             })}
+                        </div>
+                        
+                        {activeSecondaries.length > 0 && (
+                            <div className="bg-slate-900/80 p-3 rounded border border-blue-500/30">
+                                <div className="text-[10px] text-blue-400 font-bold uppercase mb-2">Active Objectives</div>
+                                <div className="space-y-2">
+                                    {activeSecondaries.map(sec => (
+                                        <div key={sec.name} className="flex items-center justify-between">
+                                            <span className="text-xs text-white">{sec.name}</span>
+                                            <button 
+                                                onClick={() => scoreSecondary(sec.name)}
+                                                className={`text-[10px] font-bold px-3 py-1 rounded transition-colors ${sec.scored ? 'bg-green-600 text-white' : 'bg-slate-700 text-slate-400'}`}
+                                            >
+                                                {sec.scored ? `Scored (${sec.score}VP)` : 'Score'}
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 6. STICKY OBJECTIVES */}
+                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
+                    <div className="flex items-center gap-2 mb-4">
+                        <Flag className="text-yellow-500" />
+                        <h3 className="font-bold text-white">Sticky Objectives</h3>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta'].map(obj => {
+                            const key = obj.toLowerCase();
+                            const isActive = objectives[key];
+                            return (
+                                <button
+                                    key={key}
+                                    onClick={() => setObjectives({...objectives, [key]: !isActive})}
+                                    className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${isActive ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-600'}`}
+                                >
+                                    <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-slate-700'}`}></div>
+                                    <span className="font-bold text-sm">{obj}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                </div>
+
+            </div>
+        )}
+
+        {/* ... (Wishlist content) ... */}
         {activeTab === 'wishlist' && (
             <div className="space-y-6">
                 <div className="bg-slate-800 p-6 rounded-xl border border-slate-700 shadow-lg">
@@ -1429,198 +1805,6 @@ function AppContent() {
                         </div>
                     </div>
                 )}
-            </div>
-        )}
-
-        {/* --- COMMAND BUNKER (PHASE 1 + PHASE 3) --- */}
-        {activeTab === 'battle' && (
-            <div className="space-y-6">
-                
-                {/* 1. TURN & CONTAGION TRACKER */}
-                <div className="bg-slate-800 rounded-xl border border-slate-700 overflow-hidden shadow-lg">
-                    <div className="bg-slate-900/50 p-4 border-b border-slate-700 flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                            <Timer className="text-green-400" />
-                            <h2 className="text-lg font-bold text-white">Battle Round</h2>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button onClick={() => setGameTurn(Math.max(1, gameTurn - 1))} className="w-8 h-8 rounded bg-slate-700 hover:bg-slate-600 flex items-center justify-center text-white">-</button>
-                            <span className="text-2xl font-bold text-white w-8 text-center">{gameTurn}</span>
-                            <button onClick={() => setGameTurn(Math.min(5, gameTurn + 1))} className="w-8 h-8 rounded bg-green-600 hover:bg-green-500 flex items-center justify-center text-white">+</button>
-                        </div>
-                    </div>
-                    <div className="p-6 text-center">
-                        <div className="text-sm text-slate-400 uppercase tracking-widest font-bold mb-2">Current Nurgle's Gift Range</div>
-                        <div className="text-6xl font-black text-green-500 drop-shadow-[0_0_15px_rgba(74,222,128,0.5)]">
-                            {contagionRange}"
-                        </div>
-                        
-                        {/* PLAGUE SELECTOR */}
-                        <div className="mt-4 pt-4 border-t border-slate-700">
-                            <div className="flex items-center justify-center gap-2 mb-2">
-                                <Biohazard size={16} className="text-yellow-500" />
-                                <span className="text-xs font-bold text-slate-300 uppercase">Active Plague</span>
-                            </div>
-                            <select 
-                                value={selectedSickness} 
-                                onChange={(e) => setSelectedSickness(e.target.value)}
-                                className="bg-slate-900 border border-slate-600 text-white text-sm rounded-lg p-2 w-full max-w-xs focus:outline-none focus:border-green-500"
-                            >
-                                {SICKNESSES.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                            </select>
-                        </div>
-
-                        <div className="text-xs text-slate-400 mt-4 bg-slate-900/50 p-3 rounded border border-slate-700 inline-block text-left">
-                            <div className="font-bold text-green-400 mb-1">AURA EFFECTS:</div>
-                            <ul className="list-disc pl-4 space-y-1">
-                                <li>Subtract 1 from Toughness</li>
-                                <li>{SICKNESSES.find(s => s.id === selectedSickness)?.effect}</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 2. NURGLE'S MATH (WOUND CALCULATOR) */}
-                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Percent className="text-blue-400" />
-                        <h3 className="font-bold text-white">Nurgle's Math (Wound Roll)</h3>
-                    </div>
-                    <div className="grid grid-cols-2 gap-4 mb-4">
-                        <div>
-                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">My Strength</label>
-                            <input 
-                                type="number" 
-                                value={mathStr}
-                                onChange={(e) => setMathStr(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
-                            />
-                        </div>
-                        <div>
-                            <label className="text-xs text-slate-400 uppercase font-bold block mb-1">Enemy Toughness</label>
-                            <input 
-                                type="number" 
-                                value={mathTough}
-                                onChange={(e) => setMathTough(parseInt(e.target.value) || 0)}
-                                className="w-full bg-slate-900 border border-slate-600 rounded p-2 text-white font-mono text-center"
-                            />
-                        </div>
-                    </div>
-                    
-                    <div className="bg-slate-900/50 p-3 rounded border border-slate-700 flex justify-between items-center">
-                        <div className="text-xs text-slate-400">
-                            <div>Target T modified to: <span className="text-green-400 font-bold">{Math.max(1, mathTough - 1)}</span></div>
-                            <div className="text-[10px] text-slate-500">(Due to Nurgle's Gift Aura)</div>
-                        </div>
-                        <div className="text-right">
-                            <div className="text-xs text-slate-400 uppercase">Wound Roll</div>
-                            <div className="text-3xl font-black text-white">{getWoundRoll()}+</div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 3. STRATAGEM LIBRARY */}
-                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <BookOpen className="text-purple-400" />
-                        <div className="flex flex-col">
-                            <h3 className="font-bold text-white">Stratagems</h3>
-                            <span className="text-[10px] text-slate-400 uppercase">{activeDetachmentName}</span>
-                        </div>
-                    </div>
-                    <div className="space-y-3">
-                        {activeStratagems.map((strat, idx) => (
-                            <div key={idx} className="bg-slate-900/50 p-3 rounded border border-slate-700">
-                                <div className="flex justify-between items-start mb-1">
-                                    <span className="font-bold text-purple-300 text-sm">{strat.name}</span>
-                                    <span className="bg-slate-800 text-slate-400 text-xs px-2 py-0.5 rounded border border-slate-600">{strat.cp}CP</span>
-                                </div>
-                                <div className="text-[10px] text-slate-500 font-mono mb-1 uppercase">{strat.phase}</div>
-                                <div className="text-xs text-slate-300">{strat.desc}</div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* 4. SCOREBOARD */}
-                <div className="grid grid-cols-2 gap-4">
-                    {/* PLAYER */}
-                    <div className="bg-slate-800 rounded-xl border border-green-500/30 p-4 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-green-500"></div>
-                        <h3 className="text-center text-green-400 font-bold mb-4">YOU</h3>
-                        
-                        <div className="flex justify-between mb-4">
-                            <div className="text-center">
-                                <div className="text-xs text-slate-500 mb-1">CP</div>
-                                <div className="text-2xl font-bold text-white">{scores.cpMe}</div>
-                                <div className="flex gap-1 justify-center mt-1">
-                                    <button onClick={() => setScores({...scores, cpMe: Math.max(0, scores.cpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
-                                    <button onClick={() => setScores({...scores, cpMe: scores.cpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
-                                </div>
-                            </div>
-                            <div className="text-center border-l border-slate-700 pl-4">
-                                <div className="text-xs text-slate-500 mb-1">VP</div>
-                                <div className="text-2xl font-bold text-white">{scores.vpMe}</div>
-                                <div className="flex gap-1 justify-center mt-1">
-                                    <button onClick={() => setScores({...scores, vpMe: Math.max(0, scores.vpMe - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
-                                    <button onClick={() => setScores({...scores, vpMe: scores.vpMe + 1})} className="w-6 h-6 bg-green-600 rounded text-xs">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* OPPONENT */}
-                    <div className="bg-slate-800 rounded-xl border border-red-500/30 p-4 relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-1 bg-red-500"></div>
-                        <h3 className="text-center text-red-400 font-bold mb-4">ENEMY</h3>
-                        
-                        <div className="flex justify-between mb-4">
-                            <div className="text-center">
-                                <div className="text-xs text-slate-500 mb-1">CP</div>
-                                <div className="text-2xl font-bold text-white">{scores.cpOpp}</div>
-                                <div className="flex gap-1 justify-center mt-1">
-                                    <button onClick={() => setScores({...scores, cpOpp: Math.max(0, scores.cpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
-                                    <button onClick={() => setScores({...scores, cpOpp: scores.cpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
-                                </div>
-                            </div>
-                            <div className="text-center border-l border-slate-700 pl-4">
-                                <div className="text-xs text-slate-500 mb-1">VP</div>
-                                <div className="text-2xl font-bold text-white">{scores.vpOpp}</div>
-                                <div className="flex gap-1 justify-center mt-1">
-                                    <button onClick={() => setScores({...scores, vpOpp: Math.max(0, scores.vpOpp - 1)})} className="w-6 h-6 bg-slate-700 rounded text-xs">-</button>
-                                    <button onClick={() => setScores({...scores, vpOpp: scores.vpOpp + 1})} className="w-6 h-6 bg-red-600 rounded text-xs">+</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* 5. STICKY OBJECTIVES */}
-                <div className="bg-slate-800 rounded-xl border border-slate-700 p-4">
-                    <div className="flex items-center gap-2 mb-4">
-                        <Flag className="text-yellow-500" />
-                        <h3 className="font-bold text-white">Sticky Objectives</h3>
-                    </div>
-                    <p className="text-xs text-slate-400 mb-4">Track infected objectives (Remorseless). Remain under control even if you leave.</p>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                        {['Alpha', 'Beta', 'Gamma', 'Delta', 'Epsilon', 'Zeta'].map(obj => {
-                            const key = obj.toLowerCase();
-                            const isActive = objectives[key];
-                            return (
-                                <button
-                                    key={key}
-                                    onClick={() => setObjectives({...objectives, [key]: !isActive})}
-                                    className={`p-3 rounded-lg border flex flex-col items-center gap-2 transition-all ${isActive ? 'bg-green-900/50 border-green-500 text-green-400' : 'bg-slate-900 border-slate-700 text-slate-500 hover:border-slate-600'}`}
-                                >
-                                    <div className={`w-3 h-3 rounded-full ${isActive ? 'bg-green-500 shadow-[0_0_8px_rgba(74,222,128,0.8)]' : 'bg-slate-700'}`}></div>
-                                    <span className="font-bold text-sm">{obj}</span>
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-
             </div>
         )}
 
@@ -1738,7 +1922,7 @@ function AppContent() {
           </div>
       )}
 
-      {/* --- DATASHEET MODAL (UPDATED WITH WEAPONS) --- */}
+      {/* --- DATASHEET MODAL --- */}
       {viewingUnit && (
           <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50" onClick={() => setViewingUnit(null)}>
               <div className="bg-slate-800 rounded-xl max-w-lg w-full border border-green-500/50 shadow-[0_0_30px_rgba(74,222,128,0.2)] overflow-hidden flex flex-col max-h-[90vh]" onClick={e => e.stopPropagation()}>
